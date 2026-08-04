@@ -183,4 +183,7 @@ ON participation(member_id);
 
 CREATE INDEX idx_member_roles_member
 ON member_roles(member_id);
+
+ALTER TABLE users
+ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
     DEFAULT CHARACTER SET = 'utf8mb4';
