@@ -5,7 +5,6 @@
 
 DROP DATABASE IF EXISTS ds_chapter_tracker;
 
-
 CREATE DATABASE IF NOT EXISTS ds_chapter_tracker;
 
 USE ds_chapter_tracker;
@@ -183,5 +182,5 @@ CREATE INDEX idx_participation_member
 ON participation(member_id);
 
 CREATE INDEX idx_member_roles_member
-
+ON member_roles(member_id);
     DEFAULT CHARACTER SET = 'utf8mb4';
