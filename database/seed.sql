@@ -20,3 +20,6 @@ INSERT INTO participation_types (activity_name, default_points, description) VAL
 ('Presentation', 20, 'Presented during the meeting'),
 ('Workshop Facilitator', 30, 'Facilitated a workshop'),
 ('Competition Winner', 50, 'Won a chapter competition');
+
+SELECT * FROM roles;
+
