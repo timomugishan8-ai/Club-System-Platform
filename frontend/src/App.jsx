@@ -1,121 +1,100 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
 
+const API_BASE = '/api/auth'
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [tab, setTab] = useState('login')
+  const [form, setForm] = useState({ full_name: '', email: '', password: '', role_id: '1' })
+  const [message, setMessage] = useState('')
+  const [token, setToken] = useState('')
+
+  const handleChange = (event) => {
+    const { name, value } = event.target
+    setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setMessage('')
+
+    const payload = tab === 'login'
+      ? { email: form.email, password: form.password }
+      : { full_name: form.full_name, email: form.email, password: form.password, role_id: form.role_id }
+
+    try {
+      const response = await fetch(`${API_BASE}/${tab}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Request failed')
+      }
+
+      setMessage(data.message || 'Success')
+      if (tab === 'login' && data.token) {
+        setToken(data.token)
+      }
+    } catch (error) {
+      setMessage(error.message)
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <main className="app">
+      <section className="auth-card">
+        <h1>{tab === 'login' ? 'Login' : 'Register'}</h1>
+
+        <div className="tab-buttons">
+          <button type="button" className={tab === 'login' ? 'active' : ''} onClick={() => setTab('login')}>
+            Login
+          </button>
+          <button type="button" className={tab === 'register' ? 'active' : ''} onClick={() => setTab('register')}>
+            Register
+          </button>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          {tab === 'register' && (
+            <label>
+              Full name
+              <input name="full_name" value={form.full_name} onChange={handleChange} required />
+            </label>
+          )}
+
+          <label>
+            Email
+            <input type="email" name="email" value={form.email} onChange={handleChange} required />
+          </label>
+
+          <label>
+            Password
+            <input type="password" name="password" value={form.password} onChange={handleChange} required />
+          </label>
+
+          {tab === 'register' && (
+            <label>
+              Role ID
+              <input name="role_id" value={form.role_id} onChange={handleChange} />
+            </label>
+          )}
+
+          <button type="submit">Submit</button>
+        </form>
+
+        {message && <p className="message">{message}</p>}
+        {token && (
+          <div className="token-box">
+            <strong>JWT token:</strong>
+            <code>{token}</code>
+          </div>
+        )}
       </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    </main>
   )
 }
 
