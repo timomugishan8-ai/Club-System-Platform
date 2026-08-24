@@ -9,6 +9,17 @@ const errorHandler = require("./middleware/errorHandler");
 
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const memberRoutes = require("./routes/memberRoutes");
+const meetingRoutes = require("./routes/meetingRoutes");
+const attendanceRoutes = require("./routes/attendanceRoutes");
+const participationRoutes = require("./routes/participationRoutes");
+const eventRoutes = require("./routes/eventRoutes");
+const projectRoutes = require("./routes/projectRoutes");
+const announcementRoutes = require("./routes/announcementRoutes");
+const resourceRoutes = require("./routes/resourceRoutes");
+const githubRoutes = require("./routes/githubRoutes");
+const leaderboardRoutes = require("./routes/leaderboardRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 
@@ -20,6 +31,17 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/members", memberRoutes);
+app.use("/api/meetings", meetingRoutes);
+app.use("/api/attendance", attendanceRoutes);
+app.use("/api/participation", participationRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/announcements", announcementRoutes);
+app.use("/api/resources", resourceRoutes);
+app.use("/api/github", githubRoutes);
+app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Health check
 app.get("/", (req, res) => {
