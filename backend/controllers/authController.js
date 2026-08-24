@@ -1,121 +1,197 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const Member = require("../models/Member");
+const ResetToken = require("../models/ResetToken");
+const { isNonEmptyString, generateToken, hashToken } = require("../utils/helpers");
 
-// Register User
-exports.register = async (req, res) => {
-
+const register = async (req, res) => {
     try {
-
         const {
-            full_name,
             email,
             password,
-            role_id
+            first_name,
+            last_name,
+            student_number,
+            gender,
+            phone,
+            course,
+            year_of_study
         } = req.body;
 
-        User.findByEmail(email, async (err, results) => {
+        if (!isNonEmptyString(email) || !isNonEmptyString(password) ||
+            !isNonEmptyString(first_name) || !isNonEmptyString(last_name)) {
+            return res.status(400).json({
+                message: "email, password, first_name and last_name are required."
+            });
+        }
 
-            if (err)
-                return res.status(500).json(err);
+        Member.findByEmail(email, async (err, results) => {
+            if (err) return res.status(500).json({ message: "Registration failed." });
 
             if (results.length > 0) {
-                return res.status(400).json({
-                    message: "Email already exists."
-                });
+                return res.status(409).json({ message: "Email already exists." });
             }
 
             const hashedPassword = await bcrypt.hash(password, 10);
 
-            User.create({
-
-                full_name,
+            Member.create({
                 email,
                 password_hash: hashedPassword,
-                role_id
-
+                first_name,
+                last_name,
+                student_number,
+                gender,
+                phone,
+                course,
+                year_of_study,
+                join_date: new Date().toISOString().slice(0, 10)
             }, (err) => {
-
-                if (err)
-                    return res.status(500).json(err);
+                if (err) {
+                    if (err.code === "ER_DUP_ENTRY") {
+                        return res.status(409).json({
+                            message: "Email or student number already exists."
+                        });
+                    }
+                    return res.status(500).json({ message: "Registration failed." });
+                }
 
                 res.status(201).json({
-                    message: "User registered successfully."
+                    message: "Registration received. An admin must approve your account before you can log in."
                 });
-
             });
-
         });
-
     } catch (error) {
-
-        res.status(500).json(error);
-
+        res.status(500).json({ message: "Registration failed." });
     }
-
 };
 
-
-// Login User
-exports.login = (req, res) => {
-
+const login = (req, res) => {
     const { email, password } = req.body;
 
-    User.findByEmail(email, async (err, results) => {
+    if (!isNonEmptyString(email) || !isNonEmptyString(password)) {
+        return res.status(400).json({ message: "email and password are required." });
+    }
 
-        if (err)
-            return res.status(500).json(err);
+    Member.findByEmail(email, async (err, results) => {
+        if (err) return res.status(500).json({ message: "Login failed." });
 
         if (results.length === 0) {
-
-            return res.status(401).json({
-                message: "Invalid email or password."
-            });
-
+            return res.status(401).json({ message: "Invalid email or password." });
         }
 
         const user = results[0];
 
-        const validPassword = await bcrypt.compare(
-            password,
-            user.password_hash
-        );
+        if (user.approval_status === "Pending") {
+            return res.status(403).json({
+                message: "Your account is pending admin approval."
+            });
+        }
+
+        if (user.approval_status === "Rejected") {
+            return res.status(403).json({
+                message: "Your account has been rejected. Contact an administrator."
+            });
+        }
+
+        if (!user.is_active) {
+            return res.status(403).json({
+                message: "Your account has been deactivated. Contact an administrator."
+            });
+        }
+
+        const validPassword = await bcrypt.compare(password, user.password_hash);
 
         if (!validPassword) {
-
-            return res.status(401).json({
-                message: "Invalid email or password."
-            });
-
+            return res.status(401).json({ message: "Invalid email or password." });
         }
 
         const token = jwt.sign(
-
             {
-
-                id: user.user_id,
-                role_id: user.role_id
-
+                id: user.member_id,
+                role_id: user.role_id,
+                role_name: user.role_name
             },
-
             process.env.JWT_SECRET,
-
-            {
-
-                expiresIn: "1d"
-
-            }
-
+            { expiresIn: "1d" }
         );
 
         res.json({
-
             message: "Login successful.",
-
-            token
-
+            token,
+            user: {
+                member_id: user.member_id,
+                email: user.email,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                role_name: user.role_name,
+                theme: user.theme
+            }
         });
-
     });
-
 };
+
+const forgotPassword = (req, res) => {
+    const { email } = req.body;
+
+    if (!isNonEmptyString(email)) {
+        return res.status(400).json({ message: "email is required." });
+    }
+
+    Member.findByEmail(email, (err, results) => {
+        if (err) return res.status(500).json({ message: "Request failed." });
+
+        if (results.length === 0) {
+            return res.json({
+                message: "If that email exists, a reset link has been sent."
+            });
+        }
+
+        const member = results[0];
+        const rawToken = generateToken();
+        const tokenHash = hashToken(rawToken);
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ");
+
+        ResetToken.create(member.member_id, tokenHash, expiresAt, (err) => {
+            if (err) return res.status(500).json({ message: "Request failed." });
+            console.log(`[reset link — email sending TBD] /reset-password?token=${rawToken}`);
+            res.json({
+                message: "If that email exists, a reset link has been sent."
+            });
+        });
+    });
+};
+
+const resetPassword = async (req, res) => {
+    const { token, password } = req.body;
+
+    if (!isNonEmptyString(token) || !isNonEmptyString(password)) {
+        return res.status(400).json({ message: "token and password are required." });
+    }
+
+    const tokenHash = hashToken(token);
+
+    ResetToken.findValid(tokenHash, (err, results) => {
+        if (err) return res.status(500).json({ message: "Reset failed." });
+        if (results.length === 0) {
+            return res.status(400).json({ message: "Invalid or expired token." });
+        }
+
+        const reset = results[0];
+
+        ResetToken.markUsed(reset.token_id, async (err) => {
+            if (err) return res.status(500).json({ message: "Reset failed." });
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            Member.updatePassword(reset.member_id, hashedPassword, (err) => {
+                if (err) return res.status(500).json({ message: "Reset failed." });
+                res.json({ message: "Password reset successful. You can now log in." });
+            });
+        });
+    });
+};
+
+module.exports = { register, login, forgotPassword, resetPassword };
