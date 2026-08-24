@@ -1,0 +1,137 @@
+import { useEffect, useState } from 'react'
+import { api } from '../lib/api'
+import Spinner from '../components/Spinner'
+import GitHubHeatmap from '../components/GitHubHeatmap'
+import { Award, TrendingUp, GitBranch, CalendarCheck, Trophy } from 'lucide-react'
+
+const tierColors = {
+  Bronze: { bg: 'bg-amber/20', text: 'text-amber', border: 'border-amber/30' },
+  Silver: { bg: 'bg-text-soft/20', text: 'text-text-soft', border: 'border-text-soft/30' },
+  Gold: { bg: 'bg-positive/20', text: 'text-positive', border: 'border-positive/30' },
+}
+
+export default function Progress() {
+  const [progress, setProgress] = useState(null)
+  const [github, setGithub] = useState(null)
+  const [activity, setActivity] = useState([])
+  const [attendance, setAttendance] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      api.leaderboard.myProgress().catch(() => null),
+      api.github.myStats().catch(() => null),
+      api.github.myActivity().catch(() => null),
+      api.attendance.myStats().catch(() => null),
+    ]).then(([p, g, a, att]) => {
+      setProgress(p?.progress || null)
+      setGithub(g?.stats || null)
+      setActivity(a?.activity || [])
+      setAttendance(att?.stats || null)
+      setLoading(false)
+    })
+  }, [])
+
+  if (loading) return <Spinner className="py-20" />
+  if (!progress) return <p className="py-10 text-center text-text-muted">No progress data.</p>
+
+  const tier = tierColors[progress.tier] || tierColors.Bronze
+
+  return (
+    <div className="space-y-5">
+      {/* Tier banner */}
+      <div className={`card border ${tier.border} p-6`}>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Trophy className={`h-6 w-6 ${tier.text}`} />
+              <h1 className="text-2xl font-bold text-white">
+                {progress.tier} <span className="text-text-muted text-base font-normal">Member</span>
+              </h1>
+            </div>
+            <p className="mt-1 text-sm text-text-muted">
+              Progress score: <span className="text-white font-semibold">{progress.progress_score}</span>
+              {progress.next_tier && (
+                <span> · {progress.points_to_next} points to {progress.next_tier}</span>
+              )}
+            </p>
+          </div>
+          <div className={`rounded-xl ${tier.bg} px-4 py-2`}>
+            <div className="text-3xl font-bold text-white">{progress.progress_score}</div>
+            <div className="text-xs text-text-muted">Total Score</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stat panels */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatPanel icon={TrendingUp} label="Participation Points" value={progress.total_points} color="bg-accent-2" />
+        <StatPanel icon={GitBranch} label="GitHub Score" value={progress.github_score} color="bg-accent-3" />
+        <StatPanel icon={CalendarCheck} label="Attendance Rate" value={`${progress.attendance_rate}%`} color="bg-positive" />
+        <StatPanel icon={Award} label="Badges Earned" value={progress.badges_earned} color="bg-amber" />
+      </div>
+
+      {/* Attendance breakdown */}
+      {attendance && (
+        <div className="card p-5">
+          <h3 className="mb-4 text-sm font-semibold text-text-soft">Attendance Breakdown</h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <AttStat label="Present" value={attendance.present} color="text-positive" />
+            <AttStat label="Late" value={attendance.late} color="text-amber" />
+            <AttStat label="Absent" value={attendance.absent} color="text-danger" />
+            <AttStat label="Excused" value={attendance.excused} color="text-text-muted" />
+          </div>
+        </div>
+      )}
+
+      {/* GitHub breakdown */}
+      {github && (
+        <div className="card p-5">
+          <h3 className="mb-4 text-sm font-semibold text-text-soft">GitHub Breakdown</h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <AttStat label="Repositories" value={github.repo_count} color="text-accent" />
+            <AttStat label="Commits" value={github.commit_count} color="text-accent" />
+            <AttStat label="Pull Requests" value={github.pr_count} color="text-accent" />
+            <AttStat label="Issues" value={github.issue_count} color="text-accent" />
+            <AttStat label="Streak (days)" value={github.streak_days} color="text-amber" />
+          </div>
+          <button
+            onClick={() => api.github.refreshMy().then(() => window.location.reload())}
+            className="mt-4 rounded-lg border border-border px-4 py-2 text-sm text-text-soft hover:bg-card-2"
+          >
+            Refresh GitHub Stats
+          </button>
+        </div>
+      )}
+
+      {/* Contribution heatmap */}
+      {github && (
+        <div className="card p-5">
+          <h3 className="mb-4 text-sm font-semibold text-text-soft">Contribution Activity</h3>
+          <GitHubHeatmap activity={activity} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function StatPanel({ icon: Icon, label, value, color }) {
+  return (
+    <div className="card p-5">
+      <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${color}`}>
+        <Icon className="h-5 w-5 text-white" />
+      </div>
+      <div className="text-2xl font-bold text-white">{value}</div>
+      <div className="text-xs text-text-muted">{label}</div>
+    </div>
+  )
+}
+
+function AttStat({ label, value, color }) {
+  return (
+    <div className="rounded-lg bg-card-2 p-3 text-center">
+      <div className={`text-2xl font-bold ${color}`}>{value || 0}</div>
+      <div className="text-xs text-text-muted">{label}</div>
+    </div>
+  )
+}

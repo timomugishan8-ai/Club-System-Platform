@@ -1,101 +1,65 @@
-import { useState } from 'react'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
+import AppLayout from './layouts/AppLayout'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+import Dashboard from './pages/Dashboard'
+import Profile from './pages/Profile'
+import Progress from './pages/Progress'
+import Projects from './pages/Projects'
+import Attendance from './pages/Attendance'
+import Leaderboard from './pages/Leaderboard'
+import Announcements from './pages/Announcements'
+import Resources from './pages/Resources'
+import Events from './pages/Events'
+import Settings from './pages/Settings'
+import AdminPending from './pages/AdminPending'
 
-const API_BASE = '/api/auth'
-
-function App() {
-  const [tab, setTab] = useState('login')
-  const [form, setForm] = useState({ full_name: '', email: '', password: '', role_id: '1' })
-  const [message, setMessage] = useState('')
-  const [token, setToken] = useState('')
-
-  const handleChange = (event) => {
-    const { name, value } = event.target
-    setForm((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-    setMessage('')
-
-    const payload = tab === 'login'
-      ? { email: form.email, password: form.password }
-      : { full_name: form.full_name, email: form.email, password: form.password, role_id: form.role_id }
-
-    try {
-      const response = await fetch(`${API_BASE}/${tab}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Request failed')
-      }
-
-      setMessage(data.message || 'Success')
-      if (tab === 'login' && data.token) {
-        setToken(data.token)
-      }
-    } catch (error) {
-      setMessage(error.message)
-    }
-  }
-
+export default function App() {
   return (
-    <main className="app">
-      <section className="auth-card">
-        <h1>{tab === 'login' ? 'Login' : 'Register'}</h1>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
-        <div className="tab-buttons">
-          <button type="button" className={tab === 'login' ? 'active' : ''} onClick={() => setTab('login')}>
-            Login
-          </button>
-          <button type="button" className={tab === 'register' ? 'active' : ''} onClick={() => setTab('register')}>
-            Register
-          </button>
-        </div>
+          {/* Protected */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/progress" element={<Progress />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/attendance" element={<Attendance />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/announcements" element={<Announcements />} />
+            <Route path="/resources" element={<Resources />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route
+              path="/admin/pending"
+              element={
+                <ProtectedRoute roles={['Admin']}>
+                  <AdminPending />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          {tab === 'register' && (
-            <label>
-              Full name
-              <input name="full_name" value={form.full_name} onChange={handleChange} required />
-            </label>
-          )}
-
-          <label>
-            Email
-            <input type="email" name="email" value={form.email} onChange={handleChange} required />
-          </label>
-
-          <label>
-            Password
-            <input type="password" name="password" value={form.password} onChange={handleChange} required />
-          </label>
-
-          {tab === 'register' && (
-            <label>
-              Role ID
-              <input name="role_id" value={form.role_id} onChange={handleChange} />
-            </label>
-          )}
-
-          <button type="submit">Submit</button>
-        </form>
-
-        {message && <p className="message">{message}</p>}
-        {token && (
-          <div className="token-box">
-            <strong>JWT token:</strong>
-            <code>{token}</code>
-          </div>
-        )}
-      </section>
-    </main>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
-
-export default App
