@@ -20,6 +20,8 @@ const resourceRoutes = require("./routes/resourceRoutes");
 const githubRoutes = require("./routes/githubRoutes");
 const leaderboardRoutes = require("./routes/leaderboardRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
+const articleRoutes = require("./routes/articleRoutes");
 
 const app = express();
 
@@ -42,6 +44,8 @@ app.use("/api/resources", resourceRoutes);
 app.use("/api/github", githubRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/articles", articleRoutes);
 
 // Health check
 app.get("/", (req, res) => {

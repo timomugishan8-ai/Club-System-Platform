@@ -195,4 +195,26 @@ export const api = {
     approve: (id) => request(`/admin/pending/${id}/approve`, { method: 'POST' }),
     reject: (id) => request(`/admin/pending/${id}/reject`, { method: 'POST' }),
   },
+
+  // Analytics (Admin)
+  analytics: {
+    get: () => request('/analytics'),
+  },
+
+  // Articles
+  articles: {
+    published: () => request('/articles'),
+    mine: () => request('/articles/mine'),
+    get: (id) => request(`/articles/${id}`),
+    create: (formData) => upload('/articles', formData),
+    update: (id, body) => request(`/articles/${id}`, { method: 'PUT', body }),
+    submit: (id) => request(`/articles/${id}/submit`, { method: 'POST' }),
+    remove: (id) => request(`/articles/${id}`, { method: 'DELETE' }),
+    like: (id) => request(`/articles/${id}/like`, { method: 'POST' }),
+    comments: (id) => request(`/articles/${id}/comments`),
+    addComment: (id, body) => request(`/articles/${id}/comments`, { method: 'POST', body: { body } }),
+    deleteComment: (id, commentId) => request(`/articles/${id}/comments/${commentId}`, { method: 'DELETE' }),
+    submitted: () => request('/articles/review/submitted'),
+    review: (id, body) => request(`/articles/${id}/review`, { method: 'POST', body }),
+  },
 }

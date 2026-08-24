@@ -3,7 +3,8 @@ import { useAuth } from '../context/AuthContext'
 import {
   LayoutDashboard, User, TrendingUp, BookOpen, FolderGit2,
   CalendarCheck, Trophy, Megaphone, Database, Settings,
-  ChevronDown, BarChart3, UserCheck,
+  ChevronDown, BarChart3, UserCheck, CalendarDays, BarChart2,
+  FileText, ClipboardCheck,
 } from 'lucide-react'
 
 const navItems = [
@@ -12,19 +13,27 @@ const navItems = [
   { to: '/progress', label: 'My Progress', icon: TrendingUp },
   { to: '/projects', label: 'Projects', icon: FolderGit2 },
   { to: '/attendance', label: 'Attendance', icon: CalendarCheck },
+  { to: '/meetings', label: 'Meetings', icon: CalendarDays },
   { to: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { to: '/announcements', label: 'Announcements', icon: Megaphone },
+  { to: '/articles', label: 'Articles', icon: FileText },
   { to: '/resources', label: 'Resources', icon: Database },
   { to: '/events', label: 'Events', icon: BookOpen },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
+const leaderItems = [
+  { to: '/admin/articles', label: 'Article Review', icon: ClipboardCheck },
+]
+
 const adminItems = [
   { to: '/admin/pending', label: 'Pending Approvals', icon: UserCheck },
+  { to: '/admin/analytics', label: 'Analytics', icon: BarChart2 },
+  { to: '/admin/articles', label: 'Article Review', icon: ClipboardCheck },
 ]
 
 export default function Sidebar({ onCollapse }) {
-  const { user, logout, isAdmin } = useAuth()
+  const { user, logout, isAdmin, isLeader } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -74,6 +83,37 @@ export default function Sidebar({ onCollapse }) {
           )
         })}
       </nav>
+
+      {/* Leader section (non-admin leaders) */}
+      {isLeader && !isAdmin && (
+        <div className="border-t border-border px-3 py-2">
+          <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+            Leader
+          </p>
+          <div className="space-y-1">
+            {leaderItems.map((item) => {
+              const Icon = item.icon
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  onClick={onCollapse}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-[10px] px-3 py-[14px] text-sm transition-colors ${
+                      isActive
+                        ? 'bg-gradient-accent font-medium text-white'
+                        : 'text-text-muted hover:bg-card hover:text-text-soft'
+                    }`
+                  }
+                >
+                  <Icon className="h-[18px] w-[18px]" />
+                  {item.label}
+                </NavLink>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Admin section */}
       {isAdmin && (

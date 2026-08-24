@@ -17,6 +17,11 @@ import Resources from './pages/Resources'
 import Events from './pages/Events'
 import Settings from './pages/Settings'
 import AdminPending from './pages/AdminPending'
+import Meetings from './pages/Meetings'
+import Analytics from './pages/Analytics'
+import Articles from './pages/Articles'
+import MyArticles from './pages/MyArticles'
+import ArticleReview from './pages/ArticleReview'
 
 export default function App() {
   return (
@@ -42,16 +47,35 @@ export default function App() {
             <Route path="/progress" element={<Progress />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/attendance" element={<Attendance />} />
+            <Route path="/meetings" element={<Meetings />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/announcements" element={<Announcements />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/events" element={<Events />} />
+            <Route path="/articles" element={<Articles />} />
+            <Route path="/articles/mine" element={<MyArticles />} />
             <Route path="/settings" element={<Settings />} />
             <Route
               path="/admin/pending"
               element={
                 <ProtectedRoute roles={['Admin']}>
                   <AdminPending />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics"
+              element={
+                <ProtectedRoute roles={['Admin']}>
+                  <Analytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/articles"
+              element={
+                <ProtectedRoute roles={['Admin', 'Leader']}>
+                  <ArticleReview />
                 </ProtectedRoute>
               }
             />

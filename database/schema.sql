@@ -385,6 +385,81 @@ CREATE TABLE system_settings (
     setting_value TEXT
 );
 
+-- -------------------------------------------
+-- Articles (file-upload based, review workflow)
+-- -------------------------------------------
+CREATE TABLE articles (
+    article_id    INT AUTO_INCREMENT PRIMARY KEY,
+    author_id     INT NOT NULL,
+    title         VARCHAR(200) NOT NULL,
+    summary       TEXT,
+    category      VARCHAR(50),
+    file_path     VARCHAR(255) NOT NULL,
+    file_size     BIGINT,
+    file_type     VARCHAR(50),
+    cover_image   VARCHAR(255),
+    reading_time  INT DEFAULT 0,
+    status        ENUM('Draft','Submitted','Approved','Rejected','Published') DEFAULT 'Draft',
+    reviewed_by   INT,
+    reviewed_at   TIMESTAMP NULL,
+    review_note   TEXT,
+    published_at  TIMESTAMP NULL,
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (author_id)
+        REFERENCES members(member_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (reviewed_by)
+        REFERENCES members(member_id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE article_tags (
+    tag_id    INT AUTO_INCREMENT PRIMARY KEY,
+    article_id INT NOT NULL,
+    tag       VARCHAR(50) NOT NULL,
+
+    FOREIGN KEY (article_id)
+        REFERENCES articles(article_id)
+        ON DELETE CASCADE,
+
+    UNIQUE (article_id, tag)
+);
+
+CREATE TABLE article_likes (
+    like_id   INT AUTO_INCREMENT PRIMARY KEY,
+    article_id INT NOT NULL,
+    member_id  INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (article_id)
+        REFERENCES articles(article_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (member_id)
+        REFERENCES members(member_id)
+        ON DELETE CASCADE,
+
+    UNIQUE (article_id, member_id)
+);
+
+CREATE TABLE article_comments (
+    comment_id INT AUTO_INCREMENT PRIMARY KEY,
+    article_id INT NOT NULL,
+    member_id  INT NOT NULL,
+    body       TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (article_id)
+        REFERENCES articles(article_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (member_id)
+        REFERENCES members(member_id)
+        ON DELETE CASCADE
+);
+
 -- ============================================
 -- Indexes
 -- ============================================
@@ -398,3 +473,8 @@ CREATE INDEX idx_member_roles_member ON member_roles(member_id);
 CREATE INDEX idx_event_date          ON events(event_date);
 CREATE INDEX idx_notification_member ON notifications(member_id);
 CREATE INDEX idx_github_daily_member ON github_daily_activity(member_id, activity_date);
+CREATE INDEX idx_article_author      ON articles(author_id);
+CREATE INDEX idx_article_status      ON articles(status);
+CREATE INDEX idx_article_category    ON articles(category);
+CREATE INDEX idx_article_likes       ON article_likes(article_id);
+CREATE INDEX idx_article_comments    ON article_comments(article_id);
