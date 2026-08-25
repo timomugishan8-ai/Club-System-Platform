@@ -1,6 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 const Article = require("../models/Article");
+const pointService = require("../services/pointService");
 
 const UPLOAD_DIR = path.join(__dirname, "..", "uploads", "articles");
 const IMAGE_DIR = path.join(__dirname, "..", "uploads", "articles", "covers");
@@ -168,9 +169,24 @@ const review = (req, res) => {
         return res.status(400).json({ message: "status must be Approved, Rejected, or Published." });
     }
 
-    Article.updateStatus(req.params.id, status, req.user.id, review_note, (err) => {
-        if (err) return res.status(500).json({ message: "Failed to review article." });
-        res.json({ message: `Article ${status.toLowerCase()}.` });
+    Article.findById(req.params.id, (err, results) => {
+        if (err || results.length === 0) {
+            return res.status(404).json({ message: "Article not found." });
+        }
+        const article = results[0];
+        const wasPublished = article.status === "Published";
+
+        Article.updateStatus(req.params.id, status, req.user.id, review_note, (err) => {
+            if (err) return res.status(500).json({ message: "Failed to review article." });
+
+            if (status === "Published" && !wasPublished) {
+                pointService.awardArticlePublished(article.author_id, req.params.id, () => {
+                    res.json({ message: `Article ${status.toLowerCase()}.` });
+                });
+            } else {
+                res.json({ message: `Article ${status.toLowerCase()}.` });
+            }
+        });
     });
 };
 
@@ -204,7 +220,17 @@ const remove = (req, res) => {
 const toggleLike = (req, res) => {
     Article.toggleLike(req.params.id, req.user.id, (err, result) => {
         if (err) return res.status(500).json({ message: "Failed to toggle like." });
-        res.json(result);
+
+        if (result.liked) {
+            Article.findById(req.params.id, (err, results) => {
+                if (err || results.length === 0) return res.json(result);
+                pointService.awardArticleLike(results[0].author_id, req.params.id, () => {
+                    res.json(result);
+                });
+            });
+        } else {
+            res.json(result);
+        }
     });
 };
 

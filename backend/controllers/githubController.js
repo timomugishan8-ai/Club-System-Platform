@@ -1,6 +1,8 @@
 const db = require("../config/db");
 const GitHubContribution = require("../models/GitHubContribution");
 const githubService = require("../services/githubService");
+const pointService = require("../services/pointService");
+const badgeService = require("../services/badgeService");
 
 const getMyGitHub = (req, res) => {
     GitHubContribution.getSummary(req.user.id, (err, results) => {
@@ -48,7 +50,11 @@ const refreshMyGitHub = (req, res) => {
 
             githubService.refreshForMember(req.user.id, handle)
                 .then((stats) => {
-                    res.json({ message: "GitHub stats refreshed.", stats });
+                    pointService.awardGitHubPoints(req.user.id, stats, () => {
+                        badgeService.evaluateBadges(req.user.id, () => {
+                            res.json({ message: "GitHub stats refreshed.", stats });
+                        });
+                    });
                 })
                 .catch((error) => {
                     res.status(502).json({
@@ -75,7 +81,11 @@ const refreshMemberGitHub = (req, res) => {
 
             githubService.refreshForMember(req.params.memberId, handle)
                 .then((stats) => {
-                    res.json({ message: "GitHub stats refreshed.", stats });
+                    pointService.awardGitHubPoints(req.params.memberId, stats, () => {
+                        badgeService.evaluateBadges(req.params.memberId, () => {
+                            res.json({ message: "GitHub stats refreshed.", stats });
+                        });
+                    });
                 })
                 .catch((error) => {
                     res.status(502).json({

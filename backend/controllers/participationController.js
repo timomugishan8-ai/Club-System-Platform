@@ -1,4 +1,5 @@
 const Participation = require("../models/Participation");
+const badgeService = require("../services/badgeService");
 
 const listTypes = (req, res) => {
     Participation.getParticipationTypes((err, results) => {
@@ -8,7 +9,7 @@ const listTypes = (req, res) => {
 };
 
 const record = (req, res) => {
-    const { meeting_id, member_id, activity, points, remarks } = req.body;
+    const { meeting_id, member_id, activity, points, pillar, remarks } = req.body;
 
     if (!meeting_id || !member_id || !activity) {
         return res.status(400).json({
@@ -17,12 +18,14 @@ const record = (req, res) => {
     }
 
     Participation.create({
-        meeting_id, member_id, activity, points, remarks
+        meeting_id, member_id, activity, points, pillar, remarks
     }, (err, result) => {
         if (err) return res.status(500).json({ message: "Failed to record participation." });
-        res.status(201).json({
-            message: "Participation recorded.",
-            participation_id: result.insertId
+        badgeService.evaluateBadges(member_id, () => {
+            res.status(201).json({
+                message: "Participation recorded.",
+                participation_id: result.insertId
+            });
         });
     });
 };

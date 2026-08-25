@@ -1,4 +1,6 @@
 const Attendance = require("../models/Attendance");
+const pointService = require("../services/pointService");
+const badgeService = require("../services/badgeService");
 
 const record = (req, res) => {
     const { meeting_id, member_id, status, check_in_time, remarks } = req.body;
@@ -11,7 +13,14 @@ const record = (req, res) => {
         meeting_id, member_id, status, check_in_time, remarks
     }, (err) => {
         if (err) return res.status(500).json({ message: "Failed to record attendance." });
-        res.status(201).json({ message: "Attendance recorded." });
+
+        pointService.awardAttendancePoints(meeting_id, member_id, status, () => {
+            pointService.awardStreakBonus(member_id, () => {
+                badgeService.evaluateBadges(member_id, () => {
+                    res.status(201).json({ message: "Attendance recorded." });
+                });
+            });
+        });
     });
 };
 
@@ -25,7 +34,10 @@ const bulkRecord = (req, res) => {
 
     Attendance.bulkCreate(meetingId, records, (err) => {
         if (err) return res.status(500).json({ message: "Failed to record attendance." });
-        res.json({ message: "Attendance recorded for all members." });
+
+        pointService.awardAttendancePointsBulk(meetingId, records, () => {
+            res.json({ message: "Attendance recorded for all members." });
+        });
     });
 };
 
@@ -55,7 +67,9 @@ const update = (req, res) => {
     const { status, check_in_time, remarks } = req.body;
     Attendance.update(req.params.id, { status, check_in_time, remarks }, (err) => {
         if (err) return res.status(500).json({ message: "Failed to update attendance." });
-        res.json({ message: "Attendance updated." });
+        badgeService.evaluateBadges(req.user.id, () => {
+            res.json({ message: "Attendance updated." });
+        });
     });
 };
 

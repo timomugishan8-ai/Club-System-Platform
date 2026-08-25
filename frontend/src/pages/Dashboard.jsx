@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Users, GraduationCap, ClipboardCheck,   Trophy, ChevronRight,
-  GitBranch, Calendar, Megaphone, Award, Flame,
+  GitBranch, Calendar, Megaphone, Award, Flame, Lock,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
@@ -16,6 +16,8 @@ export default function Dashboard() {
   const [github, setGithub] = useState(null)
   const [activity, setActivity] = useState([])
   const [leaderboard, setLeaderboard] = useState([])
+  const [allBadges, setAllBadges] = useState([])
+  const [myBadges, setMyBadges] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -25,12 +27,16 @@ export default function Dashboard() {
       api.github.myStats().catch(() => null),
       api.github.myActivity().catch(() => null),
       api.leaderboard.all().catch(() => null),
-    ]).then(([d, p, g, a, l]) => {
+      api.badges.all().catch(() => null),
+      api.badges.mine().catch(() => null),
+    ]).then(([d, p, g, a, l, bAll, bMine]) => {
       setDash(d?.dashboard || {})
       setProgress(p?.progress || null)
       setGithub(g?.stats || null)
       setActivity(a?.activity || [])
       setLeaderboard(l?.leaderboard?.slice(0, 5) || [])
+      setAllBadges(bAll?.badges || [])
+      setMyBadges(bMine?.badges || [])
       setLoading(false)
     })
   }, [])
@@ -234,15 +240,29 @@ export default function Dashboard() {
             <Link to="/progress" className="text-xs text-accent hover:underline">View All</Link>
           </div>
           <div className="grid grid-cols-4 gap-3">
-            {['Python Explorer', 'Data Analyst', 'Git Master', 'Consistency Star'].map((name, i) => (
-              <div key={name} className="flex flex-col items-center gap-1.5">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl"
-                  style={{ background: ['#3B6FE8','#22C55E','#F59E0B','#7C5CFC'][i] + '20' }}>
-                  <Award className="h-6 w-6" style={{ color: ['#3B6FE8','#22C55E','#F59E0B','#7C5CFC'][i] }} />
+            {allBadges.slice(0, 4).map((badge) => {
+              const earned = myBadges.some((b) => b.badge_id === badge.badge_id)
+              return (
+                <div key={badge.badge_id} className="flex flex-col items-center gap-1.5">
+                  <div
+                    className="flex h-12 w-12 items-center justify-center rounded-xl"
+                    style={{ background: earned ? badge.color + '20' : 'var(--color-card-2)' }}
+                  >
+                    {earned ? (
+                      <Award className="h-6 w-6" style={{ color: badge.color }} />
+                    ) : (
+                      <Lock className="h-5 w-5 text-text-muted" />
+                    )}
+                  </div>
+                  <span className={`text-center text-[10px] leading-tight ${earned ? 'text-text-soft' : 'text-text-muted'}`}>
+                    {badge.name}
+                  </span>
                 </div>
-                <span className="text-center text-[10px] text-text-muted leading-tight">{name}</span>
-              </div>
-            ))}
+              )
+            })}
+            {allBadges.length === 0 && (
+              <p className="col-span-4 py-4 text-center text-sm text-text-muted">No badges available.</p>
+            )}
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-4 text-center">
             <div>
@@ -255,7 +275,7 @@ export default function Dashboard() {
             </div>
             <div>
               <div className="text-sm font-semibold text-accent">{progress?.next_tier || '—'}</div>
-              <div className="text-[11px] text-text-muted">Next Badge</div>
+              <div className="text-[11px] text-text-muted">Next Tier</div>
             </div>
           </div>
         </div>

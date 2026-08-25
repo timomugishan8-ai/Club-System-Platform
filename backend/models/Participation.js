@@ -3,14 +3,15 @@ const db = require("../config/db");
 const Participation = {
     create: (data, callback) => {
         const sql = `
-            INSERT INTO participation (meeting_id, member_id, activity, points, remarks)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO participation (meeting_id, member_id, activity, points, pillar, remarks)
+            VALUES (?, ?, ?, ?, ?, ?)
         `;
         const params = [
             data.meeting_id,
             data.member_id,
             data.activity,
             data.points || 0,
+            data.pillar || "Attendance & Participation",
             data.remarks || null
         ];
         db.query(sql, params, callback);

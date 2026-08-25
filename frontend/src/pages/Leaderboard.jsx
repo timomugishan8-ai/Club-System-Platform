@@ -4,10 +4,21 @@ import Spinner from '../components/Spinner'
 import { useAuth } from '../context/AuthContext'
 import { Trophy } from 'lucide-react'
 
-const tierStyles = {
-  Gold: { badge: 'bg-amber text-white', label: 'text-amber' },
-  Silver: { badge: 'bg-text-soft text-bg', label: 'text-text-soft' },
-  Bronze: { badge: 'bg-amber/60 text-bg', label: 'text-amber/60' },
+const TIERS = [
+  { name: 'Diamond',     color: '#06B6D4' },
+  { name: 'Gold',        color: '#F59E0B' },
+  { name: 'Silver',      color: '#9CA3AF' },
+  { name: 'Bronze',      color: '#92400E' },
+  { name: 'Rising Star', color: '#14B8A6' },
+  { name: 'Rookie',      color: '#6B7280' },
+]
+
+const tierStyle = (tierName) => {
+  const t = TIERS.find((t) => t.name === tierName) || TIERS[5]
+  return {
+    badge: { backgroundColor: t.color + '20', color: t.color, border: `1px solid ${t.color}40` },
+    color: t.color,
+  }
 }
 
 export default function Leaderboard() {
@@ -26,12 +37,18 @@ export default function Leaderboard() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-white">Leaderboard</h1>
-        <div className="flex gap-2 text-xs">
-          <span className="rounded-full bg-amber/20 px-3 py-1 text-amber">Gold ≥ {tiers.goldMin}</span>
-          <span className="rounded-full bg-text-soft/20 px-3 py-1 text-text-soft">Silver ≥ {tiers.silverMin}</span>
-          <span className="rounded-full bg-amber/40 px-3 py-1 text-amber/80">Bronze ≥ {tiers.bronzeMin}</span>
+        <div className="flex flex-wrap gap-2 text-xs">
+          {TIERS.map((t) => (
+            <span
+              key={t.name}
+              className="rounded-full px-3 py-1 font-medium"
+              style={{ backgroundColor: t.color + '20', color: t.color }}
+            >
+              {t.name} ≥ {tiers[t.name] ?? 0}
+            </span>
+          ))}
         </div>
       </div>
 
@@ -51,7 +68,7 @@ export default function Leaderboard() {
           <tbody>
             {leaderboard.map((row) => {
               const isMe = row.member_id === user?.member_id
-              const tier = tierStyles[row.tier] || tierStyles.Bronze
+              const ts = tierStyle(row.tier)
               return (
                 <tr key={row.member_id}
                   className={`border-b border-border last:border-0 ${isMe ? 'bg-accent-2/10' : ''}`}>
@@ -78,7 +95,10 @@ export default function Leaderboard() {
                   <td className="px-4 py-3 text-right text-text-soft">{row.attendance_rate}%</td>
                   <td className="px-4 py-3 text-right font-bold text-white">{row.progress_score}</td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${tier.badge}`}>
+                    <span
+                      className="rounded-full px-2 py-0.5 text-xs font-semibold"
+                      style={ts.badge}
+                    >
                       {row.tier}
                     </span>
                   </td>

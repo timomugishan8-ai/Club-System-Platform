@@ -134,6 +134,6 @@ All endpoints under `/api`:
 
 ## Status
 
-- Backend: complete (badges auto-award engine deferred — rules TBD)
-- Frontend: scaffold complete with all pages
-- Next: badges rules, GitHub heatmap component, admin pending-members page, testing
+- Backend: complete (badges + points + leaderboard engine implemented — 5-pillar point system, 10 flat badges, 6 leaderboard tiers)
+- Frontend: scaffold complete with all pages (badge + pillar UI integration pending)
+- Next: frontend badge display, pillar breakdown charts, admin pending-members page, testing

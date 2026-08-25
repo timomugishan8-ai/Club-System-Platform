@@ -155,6 +155,7 @@ CREATE TABLE participation (
     member_id       INT NOT NULL,
     activity        VARCHAR(100) NOT NULL,
     points          INT DEFAULT 0,
+    pillar          ENUM('Attendance & Participation','Technical Skills','Projects & GitHub','Community Contribution','Professional Growth') DEFAULT 'Attendance & Participation',
     remarks         TEXT,
     recorded_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -291,7 +292,7 @@ CREATE TABLE badges (
     icon         VARCHAR(100),
     color        VARCHAR(20),
     rule_key     VARCHAR(100) NOT NULL,
-    tier         ENUM('Bronze','Silver','Gold') DEFAULT 'Bronze'
+    pillar       ENUM('Attendance & Participation','Technical Skills','Projects & GitHub','Community Contribution','Professional Growth') DEFAULT 'Attendance & Participation'
 );
 
 CREATE TABLE member_badges (
@@ -308,6 +309,27 @@ CREATE TABLE member_badges (
         ON DELETE CASCADE,
 
     UNIQUE (member_id, badge_id)
+);
+
+-- -------------------------------------------
+-- Point adjustments (manual pillar actions: mentorship, certifications, etc.)
+-- -------------------------------------------
+CREATE TABLE point_adjustments (
+    adjustment_id  INT AUTO_INCREMENT PRIMARY KEY,
+    member_id      INT NOT NULL,
+    pillar         ENUM('Attendance & Participation','Technical Skills','Projects & GitHub','Community Contribution','Professional Growth') NOT NULL,
+    activity       VARCHAR(100) NOT NULL,
+    points         INT NOT NULL,
+    remarks        TEXT,
+    awarded_by     INT,
+    awarded_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (member_id)
+        REFERENCES members(member_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (awarded_by)
+        REFERENCES members(member_id)
+        ON DELETE SET NULL
 );
 
 -- -------------------------------------------
@@ -472,6 +494,7 @@ CREATE INDEX idx_participation_member ON participation(member_id);
 CREATE INDEX idx_member_roles_member ON member_roles(member_id);
 CREATE INDEX idx_event_date          ON events(event_date);
 CREATE INDEX idx_notification_member ON notifications(member_id);
+CREATE INDEX idx_point_adjustments_member ON point_adjustments(member_id);
 CREATE INDEX idx_github_daily_member ON github_daily_activity(member_id, activity_date);
 CREATE INDEX idx_article_author      ON articles(author_id);
 CREATE INDEX idx_article_status      ON articles(status);

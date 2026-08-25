@@ -1,4 +1,24 @@
 const db = require("../config/db");
+const PointAdjustment = require("../models/PointAdjustment");
+
+const TIERS = [
+    { key: "tier_diamond_min",     name: "Diamond",     color: "#06B6D4" },
+    { key: "tier_gold_min",        name: "Gold",        color: "#F59E0B" },
+    { key: "tier_silver_min",      name: "Silver",      color: "#9CA3AF" },
+    { key: "tier_bronze_min",       name: "Bronze",       color: "#92400E" },
+    { key: "tier_rising_star_min", name: "Rising Star", color: "#14B8A6" },
+    { key: "tier_rookie_min",      name: "Rookie",      color: "#6B7280" }
+];
+
+const assignTier = (score, cfg) => {
+    for (const t of TIERS) {
+        const threshold = parseInt(cfg[t.key], 10);
+        if (!isNaN(threshold) && score >= threshold) {
+            return t.name;
+        }
+    }
+    return "Rookie";
+};
 
 const getLeaderboard = (req, res) => {
     const sql = `
@@ -34,24 +54,25 @@ const getLeaderboard = (req, res) => {
     db.query(sql, (err, results) => {
         if (err) return res.status(500).json({ message: "Failed to load leaderboard." });
 
+        const settingKeys = [
+            ...TIERS.map((t) => t.key),
+            "github_weight", "attendance_weight"
+        ];
         db.query(
-            "SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('tier_bronze_min','tier_silver_min','tier_gold_min','github_weight','attendance_weight')",
+            `SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN (${settingKeys.map(() => "?").join(",")})`,
+            settingKeys,
             (err, settings) => {
                 if (err) return res.status(500).json({ message: "Failed to load tier config." });
 
                 const cfg = {};
                 settings.forEach((s) => { cfg[s.setting_key] = s.setting_value; });
                 const githubWeight = parseFloat(cfg.github_weight) || 1;
-                const bronzeMin = parseInt(cfg.tier_bronze_min, 10) || 0;
-                const silverMin = parseInt(cfg.tier_silver_min, 10) || 500;
-                const goldMin = parseInt(cfg.tier_gold_min, 10) || 1500;
+                const attendanceWeight = parseFloat(cfg.attendance_weight) || 0;
 
                 const ranked = results.map((row, index) => {
                     const githubPoints = Math.round(row.github_score * githubWeight);
-                    const progressScore = row.total_points + githubPoints;
-                    let tier = "Bronze";
-                    if (progressScore >= goldMin) tier = "Gold";
-                    else if (progressScore >= silverMin) tier = "Silver";
+                    const attendancePoints = Math.round((row.attendance_rate / 100) * attendanceWeight);
+                    const progressScore = row.total_points + githubPoints + attendancePoints;
 
                     return {
                         rank: index + 1,
@@ -63,12 +84,19 @@ const getLeaderboard = (req, res) => {
                         total_points: row.total_points,
                         github_score: row.github_score,
                         attendance_rate: row.attendance_rate,
+                        github_points: githubPoints,
+                        attendance_points: attendancePoints,
                         progress_score: progressScore,
-                        tier
+                        tier: assignTier(progressScore, cfg)
                     };
                 });
 
-                res.json({ leaderboard: ranked, tiers: { bronzeMin, silverMin, goldMin } });
+                const tiers = {};
+                TIERS.forEach((t) => {
+                    tiers[t.name] = parseInt(cfg[t.key], 10) || 0;
+                });
+
+                res.json({ leaderboard: ranked, tiers });
             }
         );
     });
@@ -103,40 +131,59 @@ const getMyProgress = (req, res) => {
         if (results.length === 0) return res.status(404).json({ message: "Member not found." });
 
         const row = results[0];
+        const settingKeys = [
+            ...TIERS.map((t) => t.key),
+            "github_weight", "attendance_weight"
+        ];
         db.query(
-            "SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('tier_bronze_min','tier_silver_min','tier_gold_min','github_weight')",
+            `SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN (${settingKeys.map(() => "?").join(",")})`,
+            settingKeys,
             (err, settings) => {
                 if (err) return res.status(500).json({ message: "Failed to load tier config." });
 
                 const cfg = {};
                 settings.forEach((s) => { cfg[s.setting_key] = s.setting_value; });
                 const githubWeight = parseFloat(cfg.github_weight) || 1;
+                const attendanceWeight = parseFloat(cfg.attendance_weight) || 0;
                 const githubPoints = Math.round(row.github_score * githubWeight);
-                const progressScore = row.total_points + githubPoints;
+                const attendancePoints = Math.round((row.attendance_rate / 100) * attendanceWeight);
+                const progressScore = row.total_points + githubPoints + attendancePoints;
 
-                let tier = "Bronze";
-                let nextTier = "Silver";
-                let pointsToNext = (parseInt(cfg.tier_silver_min, 10) || 500) - progressScore;
+                const tierName = assignTier(progressScore, cfg);
+                const tierIndex = TIERS.findIndex((t) => t.name === tierName);
+                const nextTier = tierIndex > 0 ? TIERS[tierIndex - 1].name : null;
+                const nextThreshold = tierIndex > 0
+                    ? (parseInt(cfg[TIERS[tierIndex - 1].key], 10) || 0)
+                    : null;
+                const pointsToNext = nextThreshold != null
+                    ? Math.max(0, nextThreshold - progressScore)
+                    : 0;
 
-                if (progressScore >= (parseInt(cfg.tier_gold_min, 10) || 1500)) {
-                    tier = "Gold";
-                    nextTier = null;
-                    pointsToNext = 0;
-                } else if (progressScore >= (parseInt(cfg.tier_silver_min, 10) || 500)) {
-                    tier = "Silver";
-                    nextTier = "Gold";
-                    pointsToNext = (parseInt(cfg.tier_gold_min, 10) || 1500) - progressScore;
-                }
+                PointAdjustment.getMemberPillarPoints(memberId, (err, pillarRows) => {
+                    const pillarPoints = {};
+                    [
+                        "Attendance & Participation",
+                        "Technical Skills",
+                        "Projects & GitHub",
+                        "Community Contribution",
+                        "Professional Growth"
+                    ].forEach((p) => { pillarPoints[p] = 0; });
+                    (pillarRows || []).forEach((p) => {
+                        pillarPoints[p.pillar] = p.pillar_points;
+                    });
 
-                res.json({
-                    progress: {
-                        ...row,
-                        github_points: githubPoints,
-                        progress_score: progressScore,
-                        tier,
-                        next_tier: nextTier,
-                        points_to_next: Math.max(0, pointsToNext)
-                    }
+                    res.json({
+                        progress: {
+                            ...row,
+                            github_points: githubPoints,
+                            attendance_points: attendancePoints,
+                            progress_score: progressScore,
+                            tier: tierName,
+                            next_tier: nextTier,
+                            points_to_next: pointsToNext,
+                            pillar_points: pillarPoints
+                        }
+                    });
                 });
             }
         );

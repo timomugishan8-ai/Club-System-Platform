@@ -217,4 +217,20 @@ export const api = {
     submitted: () => request('/articles/review/submitted'),
     review: (id, body) => request(`/articles/${id}/review`, { method: 'POST', body }),
   },
+
+  // Badges
+  badges: {
+    all: () => request('/badges'),
+    mine: () => request('/badges/me'),
+    myCount: () => request('/badges/me/count'),
+    byMember: (id) => request(`/badges/member/${id}`),
+  },
+
+  // Point Adjustments
+  pointAdjustments: {
+    activities: () => request('/point-adjustments/activities'),
+    byMember: (id) => request(`/point-adjustments/member/${id}`),
+    create: (body) => request('/point-adjustments', { method: 'POST', body }),
+    remove: (id) => request(`/point-adjustments/${id}`, { method: 'DELETE' }),
+  },
 }

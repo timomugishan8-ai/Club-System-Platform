@@ -1,4 +1,7 @@
 const Project = require("../models/Project");
+const pointService = require("../services/pointService");
+const badgeService = require("../services/badgeService");
+const db = require("../config/db");
 
 const list = (req, res) => {
     Project.findAll((err, results) => {
@@ -45,11 +48,47 @@ const update = (req, res) => {
         return res.status(400).json({ message: "title is required." });
     }
 
-    Project.update(req.params.id, {
-        title, description, repo_url, status, start_date, end_date
-    }, (err) => {
-        if (err) return res.status(500).json({ message: "Failed to update project." });
-        res.json({ message: "Project updated." });
+    Project.findById(req.params.id, (err, before) => {
+        if (err || before.length === 0) {
+            return res.status(404).json({ message: "Project not found." });
+        }
+
+        const wasCompleted = before[0].status === "Completed";
+        const willComplete = status === "Completed";
+
+        Project.update(req.params.id, {
+            title, description, repo_url, status, start_date, end_date
+        }, (err) => {
+            if (err) return res.status(500).json({ message: "Failed to update project." });
+
+            if (!wasCompleted && willComplete) {
+                const lastMeetingSql = "SELECT meeting_id FROM meetings ORDER BY meeting_date DESC LIMIT 1";
+                db.query(lastMeetingSql, (err, meetings) => {
+                    if (err || meetings.length === 0) {
+                        return res.json({ message: "Project updated." });
+                    }
+
+                    Project.getMembers(req.params.id, (err, members) => {
+                        if (err || !members.length) {
+                            return res.json({ message: "Project updated." });
+                        }
+
+                        let pending = members.length;
+                        if (pending === 0) return res.json({ message: "Project updated." });
+
+                        members.forEach((m) => {
+                            pointService.awardProjectCompleted(
+                                m.member_id, meetings[0].meeting_id, req.params.id, () => {
+                                    pending--;
+                                    if (pending === 0) res.json({ message: "Project updated." });
+                                });
+                        });
+                    });
+                });
+            } else {
+                res.json({ message: "Project updated." });
+            }
+        });
     });
 };
 
@@ -74,7 +113,16 @@ const addMember = (req, res) => {
     }
     Project.addMember(req.params.id, member_id, role, (err) => {
         if (err) return res.status(500).json({ message: "Failed to add member." });
-        res.json({ message: "Member added to project." });
+
+        const lastMeetingSql = "SELECT meeting_id FROM meetings ORDER BY meeting_date DESC LIMIT 1";
+        db.query(lastMeetingSql, (err, meetings) => {
+            if (err || meetings.length === 0) {
+                return res.json({ message: "Member added to project." });
+            }
+            pointService.awardProjectJoined(member_id, meetings[0].meeting_id, () => {
+                res.json({ message: "Member added to project." });
+            });
+        });
     });
 };
 

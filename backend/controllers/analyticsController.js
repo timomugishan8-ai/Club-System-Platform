@@ -73,12 +73,29 @@ const getAnalytics = (req, res) => {
         GROUP BY m.member_id
     `, (err, r) => {
         const scores = (r || []).map((row) => row.progress_score || 0);
-        stats.tier_distribution = {
-            Bronze: scores.filter((s) => s < 500).length,
-            Silver: scores.filter((s) => s >= 500 && s < 1500).length,
-            Gold: scores.filter((s) => s >= 1500).length,
-        };
-        done();
+        const settingKeys = [
+            'tier_rookie_min', 'tier_rising_star_min',
+            'tier_bronze_min', 'tier_silver_min',
+            'tier_gold_min', 'tier_diamond_min'
+        ];
+        db.query(
+            `SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN (${settingKeys.map(() => "?").join(",")})`,
+            settingKeys,
+            (err, settings) => {
+                const cfg = {};
+                (settings || []).forEach((s) => { cfg[s.setting_key] = parseInt(s.setting_value, 10) || 0; });
+
+                stats.tier_distribution = {
+                    Rookie: scores.filter((s) => s < cfg.tier_rising_star_min).length,
+                    "Rising Star": scores.filter((s) => s >= cfg.tier_rising_star_min && s < cfg.tier_bronze_min).length,
+                    Bronze: scores.filter((s) => s >= cfg.tier_bronze_min && s < cfg.tier_silver_min).length,
+                    Silver: scores.filter((s) => s >= cfg.tier_silver_min && s < cfg.tier_gold_min).length,
+                    Gold: scores.filter((s) => s >= cfg.tier_gold_min && s < cfg.tier_diamond_min).length,
+                    Diamond: scores.filter((s) => s >= cfg.tier_diamond_min).length,
+                };
+                done();
+            }
+        );
     });
 
     // 5. Committee distribution

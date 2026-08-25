@@ -22,6 +22,8 @@ const leaderboardRoutes = require("./routes/leaderboardRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const articleRoutes = require("./routes/articleRoutes");
+const badgeRoutes = require("./routes/badgeRoutes");
+const pointAdjustmentRoutes = require("./routes/pointAdjustmentRoutes");
 
 const app = express();
 
@@ -46,6 +48,8 @@ app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/articles", articleRoutes);
+app.use("/api/badges", badgeRoutes);
+app.use("/api/point-adjustments", pointAdjustmentRoutes);
 
 // Health check
 app.get("/", (req, res) => {
