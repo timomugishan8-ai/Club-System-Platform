@@ -63,6 +63,7 @@ const Member = {
             FROM members m
             JOIN roles r ON m.role_id = r.role_id
             LEFT JOIN committees c ON m.committee_id = c.committee_id
+            WHERE r.role_name != 'Admin'
             ORDER BY m.created_at DESC
         `;
         db.query(sql, callback);
@@ -75,6 +76,7 @@ const Member = {
                 m.student_number, m.course, m.year_of_study, m.created_at
             FROM members m
             WHERE m.approval_status = 'Pending'
+                AND m.role_id != 1
             ORDER BY m.created_at ASC
         `;
         db.query(sql, callback);

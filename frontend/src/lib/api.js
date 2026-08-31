@@ -194,11 +194,24 @@ export const api = {
     pending: () => request('/admin/pending'),
     approve: (id) => request(`/admin/pending/${id}/approve`, { method: 'POST' }),
     reject: (id) => request(`/admin/pending/${id}/reject`, { method: 'POST' }),
+    membersOverview: () => request('/admin/members-overview'),
   },
 
   // Analytics (Admin)
   analytics: {
     get: () => request('/analytics'),
+  },
+
+  // Reports (Admin)
+  reports: {
+    semester: (params = '') => request(`/reports/semester${params ? `?${params}` : ''}`),
+    downloadMembersCsv: async (params = '') => {
+      const res = await fetch(`/api/reports/semester/members.csv${params ? `?${params}` : ''}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      })
+      if (!res.ok) throw new Error(`Download failed (${res.status})`)
+      return res.blob()
+    },
   },
 
   // Articles

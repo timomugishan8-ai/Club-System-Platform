@@ -22,6 +22,8 @@ import Analytics from './pages/Analytics'
 import Articles from './pages/Articles'
 import MyArticles from './pages/MyArticles'
 import ArticleReview from './pages/ArticleReview'
+import Reports from './pages/Reports'
+import AdminMembers from './pages/AdminMembers'
 
 export default function App() {
   return (
@@ -68,6 +70,22 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['Admin']}>
                   <Analytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/reports"
+              element={
+                <ProtectedRoute roles={['Admin']}>
+                  <Reports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/members"
+              element={
+                <ProtectedRoute roles={['Admin']}>
+                  <AdminMembers />
                 </ProtectedRoute>
               }
             />

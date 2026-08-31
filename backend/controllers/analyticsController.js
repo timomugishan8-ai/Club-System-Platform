@@ -11,7 +11,7 @@ const getAnalytics = (req, res) => {
     // 1. Overview counts
     db.query(`
         SELECT
-            (SELECT COUNT(*) FROM members WHERE approval_status = 'Approved' AND is_active = TRUE) AS active_members,
+            (SELECT COUNT(*) FROM members WHERE approval_status = 'Approved' AND is_active = TRUE AND role_id != 1) AS active_members,
             (SELECT COUNT(*) FROM members WHERE approval_status = 'Pending') AS pending_members,
             (SELECT COUNT(*) FROM members WHERE approval_status = 'Rejected') AS rejected_members,
             (SELECT COUNT(*) FROM meetings) AS total_meetings,
@@ -69,7 +69,7 @@ const getAnalytics = (req, res) => {
                       FROM github_contributions gc WHERE gc.member_id = m.member_id), 0) AS progress_score
         FROM members m
         LEFT JOIN participation p ON m.member_id = p.member_id
-        WHERE m.approval_status = 'Approved' AND m.is_active = TRUE
+        WHERE m.approval_status = 'Approved' AND m.is_active = TRUE AND m.role_id != 1
         GROUP BY m.member_id
     `, (err, r) => {
         const scores = (r || []).map((row) => row.progress_score || 0);
@@ -105,7 +105,7 @@ const getAnalytics = (req, res) => {
             COUNT(*) AS count
         FROM members m
         LEFT JOIN committees c ON m.committee_id = c.committee_id
-        WHERE m.approval_status = 'Approved' AND m.is_active = TRUE
+        WHERE m.approval_status = 'Approved' AND m.is_active = TRUE AND m.role_id != 1
         GROUP BY c.committee_name
         ORDER BY count DESC
     `, (err, r) => {
@@ -161,7 +161,7 @@ const getAnalytics = (req, res) => {
                       FROM github_contributions gc WHERE gc.member_id = m.member_id), 0) AS github_score
         FROM members m
         LEFT JOIN participation p ON m.member_id = p.member_id
-        WHERE m.approval_status = 'Approved' AND m.is_active = TRUE
+        WHERE m.approval_status = 'Approved' AND m.is_active = TRUE AND m.role_id != 1
         GROUP BY m.member_id
         ORDER BY points DESC, github_score DESC
         LIMIT 5

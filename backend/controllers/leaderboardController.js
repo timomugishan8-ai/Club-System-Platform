@@ -47,6 +47,7 @@ const getLeaderboard = (req, res) => {
         LEFT JOIN github_contributions gc ON m.member_id = gc.member_id
         WHERE m.approval_status = 'Approved'
             AND m.is_active = TRUE
+            AND m.role_id != 1
         GROUP BY m.member_id
         ORDER BY total_points DESC, github_score DESC, attendance_rate DESC
     `;
@@ -192,7 +193,7 @@ const getMyProgress = (req, res) => {
 
 const getDashboardStats = (req, res) => {
     const queries = {
-        memberCount: "SELECT COUNT(*) AS n FROM members WHERE approval_status = 'Approved' AND is_active = TRUE",
+        memberCount: "SELECT COUNT(*) AS n FROM members WHERE approval_status = 'Approved' AND is_active = TRUE AND role_id != 1",
         meetingCount: "SELECT COUNT(*) AS n FROM meetings WHERE meeting_date >= DATE_SUB(CURDATE(), INTERVAL 4 MONTH)",
         projectCount: "SELECT COUNT(*) AS n FROM projects WHERE status = 'Completed'",
         myPoints: "SELECT COALESCE(SUM(points), 0) AS n FROM participation WHERE member_id = ?",

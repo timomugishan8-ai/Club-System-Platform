@@ -4,7 +4,7 @@ import {
   LayoutDashboard, User, TrendingUp, BookOpen, FolderGit2,
   CalendarCheck, Trophy, Megaphone, Database, Settings,
   ChevronDown, UserCheck, CalendarDays, BarChart2,
-  FileText, ClipboardCheck,
+  FileText, ClipboardCheck, FileBarChart, Users,
 } from 'lucide-react'
 import chapterLogo from '../assets/chapter-logo.jpg'
 
@@ -29,7 +29,9 @@ const leaderItems = [
 
 const adminItems = [
   { to: '/admin/pending', label: 'Pending Approvals', icon: UserCheck },
+  { to: '/admin/members', label: 'Chapter Members', icon: Users },
   { to: '/admin/analytics', label: 'Analytics', icon: BarChart2 },
+  { to: '/admin/reports', label: 'Semester Report', icon: FileBarChart },
   { to: '/admin/articles', label: 'Article Review', icon: ClipboardCheck },
 ]
 

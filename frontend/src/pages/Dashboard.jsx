@@ -84,20 +84,22 @@ export default function Dashboard() {
         {stats.map((s) => {
           const Icon = s.icon
           return (
-            <div key={s.label} className="card p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${s.color}`}>
+            <div key={s.label} className="card p-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-text-soft">{s.label}</h3>
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${s.color}`}>
                   <Icon className="h-5 w-5 text-text" />
                 </div>
-                {s.trend && (
+              </div>
+              <div className="mt-4 text-3xl font-bold text-text">{s.value.toLocaleString()}</div>
+              <div className="mt-2 flex items-center justify-between border-t border-border pt-3">
+                <span className="text-xs text-text-muted">{s.sub}</span>
+                {s.trend ? (
                   <span className="text-xs font-medium text-positive">{s.trend}</span>
-                )}
-                {s.label === 'Challenge Points' && (
-                  <ChevronRight className="h-5 w-5 text-text-muted" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-text-muted" />
                 )}
               </div>
-              <div className="text-2xl font-bold text-text">{s.value.toLocaleString()}</div>
-              <div className="mt-0.5 text-xs text-text-muted">{s.sub}</div>
             </div>
           )
         })}
@@ -138,12 +140,12 @@ export default function Dashboard() {
               { label: 'Contributions', value: (github?.commit_count || 0) + (github?.pr_count || 0) + (github?.issue_count || 0) },
               { label: 'Day Streak', value: github?.streak_days ?? 0, flame: true },
             ].map((m) => (
-              <div key={m.label} className="rounded-lg bg-card-2 p-3">
-                <div className="text-lg font-bold text-text">
-                  {m.flame && m.value > 0 && <Flame className="mr-1 inline h-4 w-4 text-amber" />}
+              <div key={m.label} className="rounded-lg bg-card-2 p-3.5">
+                <div className="text-xl font-bold text-text">
+                  {m.flame && m.value > 0 && <Flame className="mr-1.5 inline h-4 w-4 text-amber" />}
                   {m.value}
                 </div>
-                <div className="text-[11px] text-text-muted">{m.label}</div>
+                <div className="mt-1 text-[11px] leading-snug text-text-muted">{m.label}</div>
               </div>
             ))}
           </div>
@@ -167,19 +169,19 @@ export default function Dashboard() {
               const isMe = row.member_id === user?.member_id
               return (
                 <div key={row.member_id}
-                  className={`flex items-center gap-3 rounded-lg p-2 ${isMe ? 'bg-accent-2/20 ring-1 ring-accent-2/40' : ''}`}>
-                  <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                  className={`flex items-center gap-3 rounded-lg p-2.5 ${isMe ? 'bg-accent-2/20 ring-1 ring-accent-2/40' : ''}`}>
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                     row.rank === 1 ? 'bg-amber text-white' : 'bg-card-2 text-text-muted'
                   }`}>
                     {row.rank}
                   </div>
-                  <div className="h-8 w-8 rounded-full bg-card-2 text-xs font-semibold text-accent flex items-center justify-center">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card-2 text-xs font-semibold text-accent">
                     {row.first_name?.[0]}{row.last_name?.[0]}
                   </div>
-                  <div className="flex-1 truncate text-sm text-text">
+                  <div className="min-w-0 flex-1 truncate text-sm text-text">
                     {row.first_name} {row.last_name}
                   </div>
-                  <div className="text-sm font-semibold text-text-soft">{row.total_points}</div>
+                  <div className="shrink-0 text-sm font-semibold text-text-soft">{row.total_points}</div>
                 </div>
               )
             })}
