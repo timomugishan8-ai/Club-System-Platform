@@ -26,13 +26,13 @@ export default function ForgotPassword() {
       <div className="w-full max-w-md">
         <div className="mb-6 flex flex-col items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-accent">
-            <BarChart3 className="h-6 w-6 text-white" />
+            <BarChart3 className="h-6 w-6 text-text" />
           </div>
-          <h1 className="text-lg font-bold tracking-wider text-white">DATA SCIENCE · UCU CHAPTER</h1>
+          <h1 className="text-lg font-bold tracking-wider text-text">DATA SCIENCE · UCU CHAPTER</h1>
         </div>
 
         <div className="card p-6">
-          <h2 className="mb-1 text-xl font-bold text-white">Reset password</h2>
+          <h2 className="mb-1 text-xl font-bold text-text">Reset password</h2>
           <p className="mb-6 text-sm text-text-muted">Enter your email to receive a reset link.</p>
 
           {message && (

@@ -30,7 +30,7 @@ export default function Attendance() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-xl font-bold text-white">My Attendance</h1>
+      <h1 className="text-xl font-bold text-text">My Attendance</h1>
 
       {/* Stats */}
       {stats && (
@@ -40,7 +40,7 @@ export default function Attendance() {
             return (
               <div key={s} className="card p-4 text-center">
                 <Icon className={`mx-auto mb-2 h-5 w-5 ${statusIcons[s].color}`} />
-                <div className="text-2xl font-bold text-white">{stats[s.toLowerCase()] || 0}</div>
+                <div className="text-2xl font-bold text-text">{stats[s.toLowerCase()] || 0}</div>
                 <div className="text-xs text-text-muted">{s}</div>
               </div>
             )
@@ -64,7 +64,7 @@ export default function Attendance() {
               const Icon = statusIcons[r.status]?.icon || CalendarCheck
               return (
                 <tr key={r.attendance_id} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3 text-white">{r.title}</td>
+                  <td className="px-4 py-3 text-text">{r.title}</td>
                   <td className="px-4 py-3 text-text-muted">{r.meeting_date}</td>
                   <td className="px-4 py-3">
                     <span className={`flex items-center gap-1.5 ${statusIcons[r.status]?.color || 'text-text-muted'}`}>

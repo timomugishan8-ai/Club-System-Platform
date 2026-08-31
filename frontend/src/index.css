@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Backgrounds (deep navy from UCU brand #010035) */
   --color-bg: #05061A;
@@ -59,6 +61,42 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Light mode (default): white background like the UCU website */
+  html.light {
+    --color-bg: #FFFFFF;
+    --color-bg-soft: #F6F5FB;
+    --color-card: #FFFFFF;
+    --color-card-2: #F6F5FB;
+    --color-border: #E2E0EE;
+    --color-text: #010035;
+    --color-text-soft: #3D3B62;
+    --color-text-muted: #6E6C8F;
+    --color-positive-soft: #E8F6EC;
+    --color-amber-soft: #FFF4DB;
+    --color-danger-soft: #FBE7EF;
+
+    /* UCU blue accent family (replaces magenta in light mode) */
+    --color-accent: #36348E;
+    --color-accent-2: #0B3D91;
+    --color-accent-3: #4F7BE8;
+    --color-accent-grad: linear-gradient(135deg, #0B3D91, #4F7BE8);
+  }
+
+  /* Dark mode */
+  html.dark {
+    --color-bg: #05061A;
+    --color-bg-soft: #0A0B24;
+    --color-card: #12132E;
+    --color-card-2: #161737;
+    --color-border: #262850;
+    --color-text: #ECEAF6;
+    --color-text-soft: #B9B7D0;
+    --color-text-muted: #8A88A6;
+    --color-positive-soft: #16291F;
+    --color-amber-soft: #2C2310;
+    --color-danger-soft: #2C1017;
+  }
+
   * {
     border-color: var(--color-border);
   }
@@ -74,8 +112,11 @@
     background: var(--color-border);
     border-radius: 999px;
   }
-  ::-webkit-scrollbar-thumb:hover {
+  html.dark ::-webkit-scrollbar-thumb:hover {
     background: #34366A;
+  }
+  html.light ::-webkit-scrollbar-thumb:hover {
+    background: #C9C6DE;
   }
 }
 

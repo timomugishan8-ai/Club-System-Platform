@@ -34,13 +34,13 @@ export default function ResetPassword() {
       <div className="w-full max-w-md">
         <div className="mb-6 flex flex-col items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-accent">
-            <BarChart3 className="h-6 w-6 text-white" />
+            <BarChart3 className="h-6 w-6 text-text" />
           </div>
-          <h1 className="text-lg font-bold tracking-wider text-white">DATA SCIENCE · UCU CHAPTER</h1>
+          <h1 className="text-lg font-bold tracking-wider text-text">DATA SCIENCE · UCU CHAPTER</h1>
         </div>
 
         <div className="card p-6">
-          <h2 className="mb-1 text-xl font-bold text-white">Set new password</h2>
+          <h2 className="mb-1 text-xl font-bold text-text">Set new password</h2>
 
           {error && (
             <div className="mb-4 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger">

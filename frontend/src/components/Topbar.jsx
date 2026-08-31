@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Search, Moon, Menu } from 'lucide-react'
+import { Bell, Search, Moon, Sun, Menu } from 'lucide-react'
 import { api } from '../lib/api'
+import { useTheme } from '../context/ThemeContext'
 
 export default function Topbar({ onMenuClick }) {
   const navigate = useNavigate()
+  const { theme, setTheme } = useTheme()
   const [unread, setUnread] = useState(0)
 
   useEffect(() => {
@@ -42,8 +44,12 @@ export default function Topbar({ onMenuClick }) {
           )}
         </button>
 
-        <button className="rounded-lg p-2 text-text-muted hover:bg-card hover:text-text-soft" title="Theme">
-          <Moon className="h-5 w-5" />
+        <button
+          onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+          className="rounded-lg p-2 text-text-muted hover:bg-card hover:text-text-soft"
+          title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+        >
+          {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
         </button>
       </div>
     </header>

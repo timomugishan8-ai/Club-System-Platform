@@ -49,7 +49,7 @@ export default function Resources() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white">Resources</h1>
+        <h1 className="text-xl font-bold text-text">Resources</h1>
         {canCreate && (
           <button onClick={() => setShowForm(true)}
             className="flex items-center gap-2 rounded-lg bg-gradient-accent px-4 py-2 text-sm font-semibold text-white">
@@ -71,7 +71,7 @@ export default function Resources() {
                   {r.difficulty}
                 </span>
               </div>
-              <h3 className="font-semibold text-white">{r.title}</h3>
+              <h3 className="font-semibold text-text">{r.title}</h3>
               <p className="mt-1 text-sm text-text-muted line-clamp-2">{r.description || 'No description.'}</p>
               <div className="mt-3 flex items-center gap-3">
                 <span className="rounded-full bg-card-2 px-2 py-0.5 text-xs text-text-muted">{r.category}</span>
@@ -138,7 +138,7 @@ function Modal({ title, children, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="card w-full max-w-md p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-bold text-white">{title}</h2>
+          <h2 className="font-bold text-text">{title}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-text"><X className="h-5 w-5" /></button>
         </div>
         {children}

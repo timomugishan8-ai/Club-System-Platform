@@ -44,7 +44,7 @@ export default function ArticleReview() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-white">Article Review Queue</h1>
+        <h1 className="text-xl font-bold text-text">Article Review Queue</h1>
         <p className="text-sm text-text-muted">Review articles submitted by members.</p>
       </div>
 
@@ -70,7 +70,7 @@ export default function ArticleReview() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-white">{a.title}</h3>
+                  <h3 className="font-semibold text-text">{a.title}</h3>
                   {a.summary && <p className="mt-0.5 line-clamp-2 text-sm text-text-muted">{a.summary}</p>}
                   <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-text-muted">
                     <span className="flex items-center gap-1.5">

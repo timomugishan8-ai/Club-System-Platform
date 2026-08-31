@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import chapterLogo from '../assets/chapter-logo.jpg'
@@ -42,7 +42,7 @@ export default function Register() {
         }}
       >
         <div className="w-full max-w-md card p-6 text-center">
-          <h2 className="mb-2 text-xl font-bold text-white">Registration received</h2>
+          <h2 className="mb-2 text-xl font-bold text-text">Registration received</h2>
           <p className="mb-6 text-sm text-text-muted">{success}</p>
           <button
             onClick={() => navigate('/login')}
@@ -71,11 +71,11 @@ export default function Register() {
             alt="Data Science Chapter logo"
             className="h-16 w-16 rounded-2xl object-cover shadow-lg shadow-black/40 ring-2 ring-white/10"
           />
-          <h1 className="text-lg font-bold tracking-wider text-white drop-shadow">DATA SCIENCE Â· UCU CHAPTER</h1>
+          <h1 className="text-lg font-bold tracking-wider text-white drop-shadow">DATA SCIENCE · UCU CHAPTER</h1>
         </div>
 
         <div className="card p-6">
-          <h2 className="mb-1 text-xl font-bold text-white">Create your account</h2>
+          <h2 className="mb-1 text-xl font-bold text-text">Create your account</h2>
           <p className="mb-6 text-sm text-text-muted">An admin must approve before you can log in.</p>
 
           {error && (
@@ -126,7 +126,7 @@ export default function Register() {
             </label>
             <button type="submit" disabled={loading}
               className="w-full rounded-lg bg-gradient-accent py-2.5 text-sm font-semibold text-white disabled:opacity-50">
-              {loading ? 'Submittingâ€¦' : 'Register'}
+              {loading ? 'Submitting…' : 'Register'}
             </button>
           </form>
 

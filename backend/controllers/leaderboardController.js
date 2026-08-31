@@ -29,11 +29,11 @@ const getLeaderboard = (req, res) => {
             m.avatar_url,
             m.github_handle,
             COALESCE(SUM(p.points), 0) AS total_points,
-            COALESCE(gc.commit_count, 0)
-                + COALESCE(gc.pr_count, 0)
-                + COALESCE(gc.issue_count, 0)
-                + COALESCE(gc.repo_count, 0)
-                + COALESCE(gc.star_count, 0) AS github_score,
+            COALESCE(MAX(gc.commit_count), 0)
+                + COALESCE(MAX(gc.pr_count), 0)
+                + COALESCE(MAX(gc.issue_count), 0)
+                + COALESCE(MAX(gc.repo_count), 0)
+                + COALESCE(MAX(gc.star_count), 0) AS github_score,
             CASE
                 WHEN COUNT(a.attendance_id) = 0 THEN 0
                 ELSE ROUND(

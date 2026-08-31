@@ -33,7 +33,7 @@ export default function Profile() {
             )}
           </div>
           <div className="flex-1 text-center sm:text-left">
-            <h1 className="text-xl font-bold text-white">
+            <h1 className="text-xl font-bold text-text">
               {member.first_name} {member.last_name}
             </h1>
             <p className="text-sm text-text-muted">{member.role_name}</p>
@@ -74,7 +74,7 @@ function DetailCard({ icon: Icon, label, value }) {
       </div>
       <div className="min-w-0">
         <div className="text-xs text-text-muted">{label}</div>
-        <div className="truncate text-sm text-white">{value}</div>
+        <div className="truncate text-sm text-text">{value}</div>
       </div>
     </div>
   )

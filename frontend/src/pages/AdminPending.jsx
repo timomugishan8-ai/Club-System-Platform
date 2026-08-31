@@ -55,7 +55,7 @@ export default function AdminPending() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">Pending Approvals</h1>
+          <h1 className="text-xl font-bold text-text">Pending Approvals</h1>
           <p className="text-sm text-text-muted">Review and approve new member signups.</p>
         </div>
         <div className="flex items-center gap-2 rounded-full bg-card-2 px-3 py-1.5 text-sm text-text-soft">
@@ -84,7 +84,7 @@ export default function AdminPending() {
                   {m.first_name?.[0]}{m.last_name?.[0]}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-semibold text-white">
+                  <h3 className="truncate font-semibold text-text">
                     {m.first_name} {m.last_name}
                   </h3>
                   <p className="text-xs text-text-muted">

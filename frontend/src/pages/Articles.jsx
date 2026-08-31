@@ -26,7 +26,7 @@ export default function Articles() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-white">Articles</h1>
+        <h1 className="text-xl font-bold text-text">Articles</h1>
         <p className="text-sm text-text-muted">Read articles published by chapter members.</p>
       </div>
 
@@ -67,7 +67,7 @@ export default function Articles() {
                     <Clock className="h-3 w-3" /> {a.reading_time} min
                   </span>
                 </div>
-                <h3 className="line-clamp-2 font-semibold text-white">{a.title}</h3>
+                <h3 className="line-clamp-2 font-semibold text-text">{a.title}</h3>
                 {a.summary && <p className="mt-1 line-clamp-2 text-sm text-text-muted">{a.summary}</p>}
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -158,14 +158,14 @@ function ArticleReader({ articleId, onBack }) {
             </span>
           </div>
 
-          <h1 className="text-2xl font-bold text-white">{a.title}</h1>
+          <h1 className="text-2xl font-bold text-text">{a.title}</h1>
 
           <div className="mt-3 flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-card-2 text-sm font-semibold text-accent">
               {a.author_name?.split(' ').map((n) => n[0]).join('').slice(0, 2)}
             </div>
             <div>
-              <div className="text-sm text-white">{a.author_name}</div>
+              <div className="text-sm text-text">{a.author_name}</div>
               <div className="flex items-center gap-1 text-xs text-text-muted">
                 <Calendar className="h-3 w-3" /> {a.published_at ? new Date(a.published_at).toLocaleDateString() : ''}
               </div>
@@ -212,7 +212,7 @@ function ArticleReader({ articleId, onBack }) {
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-sm font-medium text-text">
                     {c.first_name} {c.last_name}
                   </span>
                   <div className="flex items-center gap-2">

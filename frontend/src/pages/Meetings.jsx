@@ -76,7 +76,7 @@ export default function Meetings() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white">Meetings</h1>
+        <h1 className="text-xl font-bold text-text">Meetings</h1>
         {canManage && (
           <button onClick={openCreate}
             className="flex items-center gap-2 rounded-lg bg-gradient-accent px-4 py-2 text-sm font-semibold text-white">
@@ -101,7 +101,7 @@ export default function Meetings() {
                   <span className="text-[10px] uppercase">{d.toLocaleString('en', { month: 'short' })}</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-semibold text-white">{m.title}</h3>
+                  <h3 className="truncate font-semibold text-text">{m.title}</h3>
                   {m.topic && <p className="truncate text-sm text-text-muted">{m.topic}</p>}
                   <div className="mt-0.5 flex items-center gap-3 text-xs text-text-muted">
                     {m.venue && <span>{m.venue}</span>}
@@ -247,7 +247,7 @@ function AttendanceSheet({ meetingId, onBack, canManage }) {
 
       {/* Meeting header */}
       <div className="card p-5">
-        <h1 className="text-xl font-bold text-white">{meeting.title}</h1>
+        <h1 className="text-xl font-bold text-text">{meeting.title}</h1>
         {meeting.topic && <p className="mt-0.5 text-sm text-text-muted">{meeting.topic}</p>}
         <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-text-muted">
           <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {meeting.meeting_date}</span>
@@ -300,7 +300,7 @@ function AttendanceSheet({ meetingId, onBack, canManage }) {
                   {m.first_name?.[0]}{m.last_name?.[0]}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm text-white">
+                  <div className="truncate text-sm text-text">
                     {m.first_name} {m.last_name}
                   </div>
                   <div className="truncate text-xs text-text-muted">
@@ -362,7 +362,7 @@ function Modal({ title, children, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="card w-full max-w-md p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-bold text-white">{title}</h2>
+          <h2 className="font-bold text-text">{title}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-text"><X className="h-5 w-5" /></button>
         </div>
         {children}

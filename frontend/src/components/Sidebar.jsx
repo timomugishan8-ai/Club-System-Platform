@@ -53,7 +53,7 @@ export default function Sidebar({ onCollapse }) {
             className="h-10 w-10 rounded-xl object-cover ring-2 ring-white/10"
           />
           <div className="leading-tight">
-            <div className="text-sm font-bold tracking-wider text-white">DATA SCIENCE</div>
+            <div className="text-sm font-bold tracking-wider text-text">DATA SCIENCE</div>
             <div className="text-xs font-semibold tracking-wider text-text-soft">UCU CHAPTER</div>
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function Sidebar({ onCollapse }) {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium text-white">
+            <div className="truncate text-sm font-medium text-text">
               {user?.first_name} {user?.last_name}
             </div>
             <div className="truncate text-xs text-text-muted">{user?.role_name}</div>

@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
 import { User, Lock, GitBranch, Bell, Palette, LogOut } from 'lucide-react'
 
 export default function Settings() {
   const { logout, refreshUser } = useAuth()
-  const navigate = useNavigate()
+  const { theme, setTheme } = useTheme()
   const [profile, setProfile] = useState(null)
   const [pwd, setPwd] = useState({ current_password: '', new_password: '' })
   const [msg, setMsg] = useState('')
@@ -27,11 +27,20 @@ export default function Settings() {
         bio: d.member.bio || '',
         notify_email: d.member.notify_email !== false,
         notify_inapp: d.member.notify_inapp !== false,
-        theme: d.member.theme || 'dark',
+        theme: d.member.theme || 'light',
       })
       setLoading(false)
     })
   }, [])
+
+  // keep local theme in sync with the saved member preference on load
+  useEffect(() => {
+    if (profile?.theme && profile.theme !== theme) {
+      // only sync if user hasn't explicitly chosen in this session
+      if (!localStorage.getItem('theme')) setTheme(profile.theme)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.theme])
 
   if (loading) return <Spinner className="py-20" />
 
@@ -62,7 +71,7 @@ export default function Settings() {
 
   return (
     <div className="max-w-3xl space-y-5">
-      <h1 className="text-xl font-bold text-white">Settings</h1>
+      <h1 className="text-xl font-bold text-text">Settings</h1>
 
       {msg && <div className="rounded-lg border border-positive/30 bg-positive-soft px-4 py-2 text-sm text-positive">{msg}</div>}
       {error && <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-2 text-sm text-danger">{error}</div>}
@@ -154,10 +163,10 @@ export default function Settings() {
       {/* Theme */}
       <Section icon={Palette} title="Theme">
         <div className="flex gap-3">
-          {['dark', 'light'].map((t) => (
-            <button key={t} onClick={() => setProfile({ ...profile, theme: t })}
+          {['light', 'dark'].map((t) => (
+            <button key={t} onClick={() => { setTheme(t); setProfile((p) => ({ ...p, theme: t })) }}
               className={`rounded-lg border px-4 py-2 text-sm capitalize ${
-                profile.theme === t ? 'border-accent bg-accent/10 text-accent' : 'border-border text-text-muted'
+                theme === t ? 'border-accent bg-accent/10 text-accent' : 'border-border text-text-muted'
               }`}>
               {t}
             </button>

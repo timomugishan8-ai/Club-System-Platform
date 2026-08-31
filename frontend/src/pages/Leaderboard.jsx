@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
 import { useAuth } from '../context/AuthContext'
@@ -38,7 +38,7 @@ export default function Leaderboard() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-white">Leaderboard</h1>
+        <h1 className="text-xl font-bold text-text">Leaderboard</h1>
         <div className="flex flex-wrap gap-2 text-xs">
           {TIERS.map((t) => (
             <span
@@ -46,7 +46,7 @@ export default function Leaderboard() {
               className="rounded-full px-3 py-1 font-medium"
               style={{ backgroundColor: t.color + '20', color: t.color }}
             >
-              {t.name} â‰¥ {tiers[t.name] ?? 0}
+              {t.name} ≥ {tiers[t.name] ?? 0}
             </span>
           ))}
         </div>
@@ -84,7 +84,7 @@ export default function Leaderboard() {
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-card-2 text-xs font-semibold text-accent">
                         {row.first_name?.[0]}{row.last_name?.[0]}
                       </div>
-                      <span className="text-white">
+                      <span className="text-text">
                         {row.first_name} {row.last_name}
                         {isMe && <span className="ml-2 text-xs text-accent">(you)</span>}
                       </span>
@@ -93,7 +93,7 @@ export default function Leaderboard() {
                   <td className="px-4 py-3 text-right text-text-soft">{row.total_points}</td>
                   <td className="px-4 py-3 text-right text-text-soft">{row.github_score}</td>
                   <td className="px-4 py-3 text-right text-text-soft">{row.attendance_rate}%</td>
-                  <td className="px-4 py-3 text-right font-bold text-white">{row.progress_score}</td>
+                  <td className="px-4 py-3 text-right font-bold text-text">{row.progress_score}</td>
                   <td className="px-4 py-3 text-center">
                     <span
                       className="rounded-full px-2 py-0.5 text-xs font-semibold"

@@ -38,7 +38,7 @@ export default function Projects() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white">Projects</h1>
+        <h1 className="text-xl font-bold text-text">Projects</h1>
         {canCreate && (
           <button onClick={() => setShowForm(true)}
             className="flex items-center gap-2 rounded-lg bg-gradient-accent px-4 py-2 text-sm font-semibold text-white">
@@ -61,7 +61,7 @@ export default function Projects() {
                   {p.status}
                 </span>
               </div>
-              <h3 className="font-semibold text-white">{p.title}</h3>
+              <h3 className="font-semibold text-text">{p.title}</h3>
               <p className="mt-1 text-sm text-text-muted line-clamp-2">{p.description || 'No description.'}</p>
               {p.repo_url && (
                 <a href={p.repo_url} target="_blank" rel="noreferrer"
@@ -110,7 +110,7 @@ function Modal({ title, children, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="card w-full max-w-md p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-bold text-white">{title}</h2>
+          <h2 className="font-bold text-text">{title}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-text"><X className="h-5 w-5" /></button>
         </div>
         {children}

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
 import GitHubHeatmap from '../components/GitHubHeatmap'
@@ -16,11 +16,11 @@ const TIERS = [
 const tierColor = (name) => (TIERS.find((t) => t.name === name) || TIERS[5]).color
 
 const PILLARS = [
-  { key: 'Attendance & Participation', color: '#6C6AE8', short: 'Attendance' },
+  { key: 'Attendance & Participation', color: 'var(--color-accent-3)', short: 'Attendance' },
   { key: 'Technical Skills',          color: '#22C55E', short: 'Technical' },
   { key: 'Projects & GitHub',         color: '#FFC53A', short: 'Projects' },
   { key: 'Community Contribution',    color: '#06B6D4', short: 'Community' },
-  { key: 'Professional Growth',       color: '#C7157D', short: 'Professional' },
+  { key: 'Professional Growth',       color: 'var(--color-accent)', short: 'Professional' },
 ]
 
 export default function Progress() {
@@ -69,14 +69,14 @@ export default function Progress() {
           <div>
             <div className="flex items-center gap-2">
               <Trophy className="h-6 w-6" style={{ color: tc }} />
-              <h1 className="text-2xl font-bold text-white">
+              <h1 className="text-2xl font-bold text-text">
                 {progress.tier} <span className="text-text-muted text-base font-normal">Member</span>
               </h1>
             </div>
             <p className="mt-1 text-sm text-text-muted">
-              Progress score: <span className="text-white font-semibold">{progress.progress_score}</span>
+              Progress score: <span className="text-text font-semibold">{progress.progress_score}</span>
               {progress.next_tier && (
-                <span> Â· {progress.points_to_next} points to {progress.next_tier}</span>
+                <span> · {progress.points_to_next} points to {progress.next_tier}</span>
               )}
             </p>
           </div>
@@ -84,7 +84,7 @@ export default function Progress() {
             className="rounded-xl px-4 py-2"
             style={{ backgroundColor: tc + '20' }}
           >
-            <div className="text-3xl font-bold text-white">{progress.progress_score}</div>
+            <div className="text-3xl font-bold text-text">{progress.progress_score}</div>
             <div className="text-xs text-text-muted">Total Score</div>
           </div>
         </div>
@@ -209,9 +209,9 @@ function StatPanel({ icon: Icon, label, value, color }) {
   return (
     <div className="card p-5">
       <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${color}`}>
-        <Icon className="h-5 w-5 text-white" />
+        <Icon className="h-5 w-5 text-text" />
       </div>
-      <div className="text-2xl font-bold text-white">{value}</div>
+      <div className="text-2xl font-bold text-text">{value}</div>
       <div className="text-xs text-text-muted">{label}</div>
     </div>
   )

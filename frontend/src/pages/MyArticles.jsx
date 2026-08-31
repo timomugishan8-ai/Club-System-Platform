@@ -79,7 +79,7 @@ export default function MyArticles() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">My Articles</h1>
+          <h1 className="text-xl font-bold text-text">My Articles</h1>
           <p className="text-sm text-text-muted">Upload, submit, and track your articles.</p>
         </div>
         <div className="flex gap-2">
@@ -113,7 +113,7 @@ export default function MyArticles() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-semibold text-white">{a.title}</h3>
+                  <h3 className="truncate font-semibold text-text">{a.title}</h3>
                   <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-text-muted">
                     <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 ${st.color}`}>
                       <StatusIcon className="h-3 w-3" /> {a.status}
@@ -211,7 +211,7 @@ function Modal({ title, children, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="card max-h-[90vh] w-full max-w-md overflow-y-auto p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-bold text-white">{title}</h2>
+          <h2 className="font-bold text-text">{title}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-text"><X className="h-5 w-5" /></button>
         </div>
         {children}

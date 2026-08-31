@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import chapterLogo from '../assets/chapter-logo.jpg'
@@ -53,7 +53,7 @@ export default function Login() {
         </div>
 
         <div className="card p-6">
-          <h2 className="mb-1 text-xl font-bold text-white">Welcome back</h2>
+          <h2 className="mb-1 text-xl font-bold text-text">Welcome back</h2>
           <p className="mb-6 text-sm text-text-muted">Log in to your chapter account.</p>
 
           {error && (
@@ -84,7 +84,7 @@ export default function Login() {
                 onChange={handleChange}
                 required
                 className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none"
-                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                placeholder="••••••••"
               />
             </label>
             <button
@@ -92,7 +92,7 @@ export default function Login() {
               disabled={loading}
               className="w-full rounded-lg bg-gradient-accent py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {loading ? 'Logging inâ€¦' : 'Log in'}
+              {loading ? 'Logging in…' : 'Log in'}
             </button>
           </form>
 
