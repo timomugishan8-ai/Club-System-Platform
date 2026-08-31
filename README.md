@@ -135,5 +135,17 @@ All endpoints under `/api`:
 ## Status
 
 - Backend: complete (badges + points + leaderboard engine implemented — 5-pillar point system, 10 flat badges, 6 leaderboard tiers)
-- Frontend: scaffold complete with all pages (badge + pillar UI integration pending)
-- Next: frontend badge display, pillar breakdown charts, admin pending-members page, testing
+- Frontend: complete (all pages implemented, including admin pending-members, analytics, and articles)
+- Next: automated testing, frontend badge display polish, pillar breakdown charts
+
+## Testing
+
+Backend tests use Jest + Supertest with a mocked database layer:
+
+```bash
+cd backend
+npm install          # dev dependencies include jest + supertest
+npm test
+```
+
+The test suite covers the point service (attendance, streak, project, GitHub, article awards) and badge rules.

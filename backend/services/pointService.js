@@ -103,47 +103,58 @@ const pointService = {
                 { weeks: 12, name: "Attendance Streak (12w)", points: 50 }
             ];
 
-            let awarded = 0;
-            let pendingStreaks = streaks.length;
-            if (pendingStreaks === 0) return callback(null);
+            let pending = streaks.length;
+            let finished = false;
+            const finish = (e) => {
+                if (!finished) {
+                    finished = true;
+                    callback(e || null);
+                }
+            };
+            if (pending === 0) return finish(null);
 
             streaks.forEach((s) => {
-                if (streak >= s.weeks) {
-                    const checkSql = `
-                        SELECT participation_id FROM participation
-                        WHERE member_id = ? AND activity = ?
-                        LIMIT 1
+                if (streak < s.weeks) {
+                    pending--;
+                    if (pending === 0) finish();
+                    return;
+                }
+
+                const checkSql = `
+                    SELECT participation_id FROM participation
+                    WHERE member_id = ? AND activity = ?
+                    LIMIT 1
+                `;
+                db.query(checkSql, [memberId, s.name], (err, existing) => {
+                    if (err || existing.length > 0) {
+                        pending--;
+                        if (pending === 0) finish();
+                        return;
+                    }
+
+                    const lastMeetingSql = `
+                        SELECT meeting_id FROM meetings
+                        ORDER BY meeting_date DESC LIMIT 1
                     `;
-                    db.query(checkSql, [memberId, s.name], (err, existing) => {
-                        pendingStreaks--;
-                        if (err || existing.length > 0) {
-                            if (pendingStreaks === 0 && awarded === 0) return callback(null);
+                    db.query(lastMeetingSql, (err, meetings) => {
+                        if (err || meetings.length === 0) {
+                            pending--;
+                            if (pending === 0) finish();
                             return;
                         }
-
-                        const lastMeetingSql = `
-                            SELECT meeting_id FROM meetings
-                            ORDER BY meeting_date DESC LIMIT 1
-                        `;
-                        db.query(lastMeetingSql, (err, meetings) => {
-                            if (err || meetings.length === 0) return;
-                            Participation.create({
-                                meeting_id: meetings[0].meeting_id,
-                                member_id: memberId,
-                                activity: s.name,
-                                points: s.points,
-                                pillar: "Attendance & Participation",
-                                remarks: "Auto-awarded streak bonus"
-                            }, () => {
-                                awarded++;
-                                if (pendingStreaks === 0) callback(null);
-                            });
+                        Participation.create({
+                            meeting_id: meetings[0].meeting_id,
+                            member_id: memberId,
+                            activity: s.name,
+                            points: s.points,
+                            pillar: "Attendance & Participation",
+                            remarks: "Auto-awarded streak bonus"
+                        }, () => {
+                            pending--;
+                            if (pending === 0) finish();
                         });
                     });
-                } else {
-                    pendingStreaks--;
-                    if (pendingStreaks === 0 && awarded === 0) callback(null);
-                }
+                });
             });
         });
     },
@@ -198,8 +209,7 @@ const pointService = {
     },
 
     awardGitHubPoints: (memberId, stats, callback) => {
-        const { commit_count, pr_count, issue_count, repo_count, star_count } = stats;
-        const githubPoints = (commit_count || 0) + (pr_count || 0) * 2 + (issue_count || 0);
+        const { pr_count } = stats;
 
         const sql = `
             SELECT participation_id FROM participation

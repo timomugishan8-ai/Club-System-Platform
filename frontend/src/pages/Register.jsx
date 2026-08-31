@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BarChart3 } from 'lucide-react'
 import { api } from '../lib/api'
+import chapterLogo from '../assets/chapter-logo.jpg'
+import frontCover from '../assets/front-cover.jpg'
 
 export default function Register() {
   const navigate = useNavigate()
@@ -32,7 +33,14 @@ export default function Register() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg px-4">
+      <div
+        className="relative flex min-h-screen items-center justify-center px-4"
+        style={{
+          backgroundImage: `linear-gradient(rgba(10, 14, 20, 0.82), rgba(10, 14, 20, 0.94)), url(${frontCover})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
         <div className="w-full max-w-md card p-6 text-center">
           <h2 className="mb-2 text-xl font-bold text-white">Registration received</h2>
           <p className="mb-6 text-sm text-text-muted">{success}</p>
@@ -48,13 +56,22 @@ export default function Register() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg px-4 py-8">
+    <div
+      className="relative flex min-h-screen items-center justify-center px-4 py-8"
+      style={{
+        backgroundImage: `linear-gradient(rgba(10, 14, 20, 0.82), rgba(10, 14, 20, 0.94)), url(${frontCover})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       <div className="w-full max-w-md">
         <div className="mb-6 flex flex-col items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-accent">
-            <BarChart3 className="h-6 w-6 text-white" />
-          </div>
-          <h1 className="text-lg font-bold tracking-wider text-white">DATA SCIENCE · UCU CHAPTER</h1>
+          <img
+            src={chapterLogo}
+            alt="Data Science Chapter logo"
+            className="h-16 w-16 rounded-2xl object-cover shadow-lg shadow-black/40 ring-2 ring-white/10"
+          />
+          <h1 className="text-lg font-bold tracking-wider text-white drop-shadow">DATA SCIENCE · UCU CHAPTER</h1>
         </div>
 
         <div className="card p-6">

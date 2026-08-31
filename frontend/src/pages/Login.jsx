@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { BarChart3 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import chapterLogo from '../assets/chapter-logo.jpg'
+import frontCover from '../assets/front-cover.jpg'
 
 export default function Login() {
   const { login } = useAuth()
@@ -30,15 +31,24 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg px-4">
+    <div
+      className="relative flex min-h-screen items-center justify-center px-4"
+      style={{
+        backgroundImage: `linear-gradient(rgba(10, 14, 20, 0.82), rgba(10, 14, 20, 0.94)), url(${frontCover})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-accent">
-            <BarChart3 className="h-6 w-6 text-white" />
-          </div>
+          <img
+            src={chapterLogo}
+            alt="Data Science Chapter logo"
+            className="h-16 w-16 rounded-2xl object-cover shadow-lg shadow-black/40 ring-2 ring-white/10"
+          />
           <div className="text-center">
-            <h1 className="text-lg font-bold tracking-wider text-white">DATA SCIENCE</h1>
-            <p className="text-xs font-semibold tracking-wider text-text-soft">UCU CHAPTER</p>
+            <h1 className="text-lg font-bold tracking-wider text-white drop-shadow">DATA SCIENCE</h1>
+            <p className="text-xs font-semibold tracking-wider text-text-soft drop-shadow">UCU CHAPTER</p>
           </div>
         </div>
 

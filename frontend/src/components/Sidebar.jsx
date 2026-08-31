@@ -3,9 +3,10 @@ import { useAuth } from '../context/AuthContext'
 import {
   LayoutDashboard, User, TrendingUp, BookOpen, FolderGit2,
   CalendarCheck, Trophy, Megaphone, Database, Settings,
-  ChevronDown, BarChart3, UserCheck, CalendarDays, BarChart2,
+  ChevronDown, UserCheck, CalendarDays, BarChart2,
   FileText, ClipboardCheck,
 } from 'lucide-react'
+import chapterLogo from '../assets/chapter-logo.jpg'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -46,9 +47,11 @@ export default function Sidebar({ onCollapse }) {
       {/* Header */}
       <div className="px-5 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-accent">
-            <BarChart3 className="h-5 w-5 text-white" />
-          </div>
+          <img
+            src={chapterLogo}
+            alt="Data Science Chapter logo"
+            className="h-10 w-10 rounded-xl object-cover ring-2 ring-white/10"
+          />
           <div className="leading-tight">
             <div className="text-sm font-bold tracking-wider text-white">DATA SCIENCE</div>
             <div className="text-xs font-semibold tracking-wider text-text-soft">UCU CHAPTER</div>
