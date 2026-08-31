@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import chapterLogo from '../assets/chapter-logo.jpg'
@@ -36,7 +36,7 @@ export default function Register() {
       <div
         className="relative flex min-h-screen items-center justify-center px-4"
         style={{
-          backgroundImage: `linear-gradient(rgba(10, 14, 20, 0.82), rgba(10, 14, 20, 0.94)), url(${frontCover})`,
+          backgroundImage: `linear-gradient(rgba(5, 6, 26, 0.78), rgba(5, 6, 26, 0.92)), url(${frontCover})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -59,7 +59,7 @@ export default function Register() {
     <div
       className="relative flex min-h-screen items-center justify-center px-4 py-8"
       style={{
-        backgroundImage: `linear-gradient(rgba(10, 14, 20, 0.82), rgba(10, 14, 20, 0.94)), url(${frontCover})`,
+        backgroundImage: `linear-gradient(rgba(5, 6, 26, 0.78), rgba(5, 6, 26, 0.92)), url(${frontCover})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
@@ -71,7 +71,7 @@ export default function Register() {
             alt="Data Science Chapter logo"
             className="h-16 w-16 rounded-2xl object-cover shadow-lg shadow-black/40 ring-2 ring-white/10"
           />
-          <h1 className="text-lg font-bold tracking-wider text-white drop-shadow">DATA SCIENCE · UCU CHAPTER</h1>
+          <h1 className="text-lg font-bold tracking-wider text-white drop-shadow">DATA SCIENCE Â· UCU CHAPTER</h1>
         </div>
 
         <div className="card p-6">
@@ -126,7 +126,7 @@ export default function Register() {
             </label>
             <button type="submit" disabled={loading}
               className="w-full rounded-lg bg-gradient-accent py-2.5 text-sm font-semibold text-white disabled:opacity-50">
-              {loading ? 'Submitting…' : 'Register'}
+              {loading ? 'Submittingâ€¦' : 'Register'}
             </button>
           </form>
 

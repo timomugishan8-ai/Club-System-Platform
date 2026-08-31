@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
 import GitHubHeatmap from '../components/GitHubHeatmap'
@@ -6,7 +6,7 @@ import { Award, TrendingUp, GitBranch, CalendarCheck, Trophy, Lock } from 'lucid
 
 const TIERS = [
   { name: 'Diamond',     color: '#06B6D4' },
-  { name: 'Gold',        color: '#F59E0B' },
+  { name: 'Gold',        color: '#FFC53A' },
   { name: 'Silver',      color: '#9CA3AF' },
   { name: 'Bronze',      color: '#92400E' },
   { name: 'Rising Star', color: '#14B8A6' },
@@ -16,11 +16,11 @@ const TIERS = [
 const tierColor = (name) => (TIERS.find((t) => t.name === name) || TIERS[5]).color
 
 const PILLARS = [
-  { key: 'Attendance & Participation', color: '#3B6FE8', short: 'Attendance' },
+  { key: 'Attendance & Participation', color: '#6C6AE8', short: 'Attendance' },
   { key: 'Technical Skills',          color: '#22C55E', short: 'Technical' },
-  { key: 'Projects & GitHub',         color: '#F59E0B', short: 'Projects' },
+  { key: 'Projects & GitHub',         color: '#FFC53A', short: 'Projects' },
   { key: 'Community Contribution',    color: '#06B6D4', short: 'Community' },
-  { key: 'Professional Growth',       color: '#7C5CFC', short: 'Professional' },
+  { key: 'Professional Growth',       color: '#C7157D', short: 'Professional' },
 ]
 
 export default function Progress() {
@@ -76,7 +76,7 @@ export default function Progress() {
             <p className="mt-1 text-sm text-text-muted">
               Progress score: <span className="text-white font-semibold">{progress.progress_score}</span>
               {progress.next_tier && (
-                <span> · {progress.points_to_next} points to {progress.next_tier}</span>
+                <span> Â· {progress.points_to_next} points to {progress.next_tier}</span>
               )}
             </p>
           </div>

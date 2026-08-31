@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
 import { useAuth } from '../context/AuthContext'
@@ -52,7 +52,7 @@ export default function Analytics() {
             data={data.member_growth || []}
             xKey="month"
             yKey="count"
-            color="#3B6FE8"
+            color="#6C6AE8"
           />
         </div>
 
@@ -62,15 +62,15 @@ export default function Analytics() {
           <div className="flex items-center gap-6">
             <DonutChart
               data={[
-                { label: 'Gold', value: data.tier_distribution?.Gold || 0, color: '#F59E0B' },
-                { label: 'Silver', value: data.tier_distribution?.Silver || 0, color: '#8B93A7' },
+                { label: 'Gold', value: data.tier_distribution?.Gold || 0, color: '#FFC53A' },
+                { label: 'Silver', value: data.tier_distribution?.Silver || 0, color: '#8A88A6' },
                 { label: 'Bronze', value: data.tier_distribution?.Bronze || 0, color: '#B45309' },
               ]}
             />
             <div className="space-y-2">
               {[
-                { label: 'Gold', value: data.tier_distribution?.Gold || 0, color: '#F59E0B' },
-                { label: 'Silver', value: data.tier_distribution?.Silver || 0, color: '#8B93A7' },
+                { label: 'Gold', value: data.tier_distribution?.Gold || 0, color: '#FFC53A' },
+                { label: 'Silver', value: data.tier_distribution?.Silver || 0, color: '#8A88A6' },
                 { label: 'Bronze', value: data.tier_distribution?.Bronze || 0, color: '#B45309' },
               ].map((d) => (
                 <div key={d.label} className="flex items-center gap-2 text-sm">
@@ -90,9 +90,9 @@ export default function Analytics() {
             data={data.attendance_trend || []}
             bars={[
               { key: 'present', color: '#22C55E', label: 'Present' },
-              { key: 'late', color: '#F59E0B', label: 'Late' },
-              { key: 'absent', color: '#EF4444', label: 'Absent' },
-              { key: 'excused', color: '#8B93A7', label: 'Excused' },
+              { key: 'late', color: '#FFC53A', label: 'Late' },
+              { key: 'absent', color: '#D7014D', label: 'Absent' },
+              { key: 'excused', color: '#8A88A6', label: 'Excused' },
             ]}
             xKey="meeting_date"
           />
@@ -123,8 +123,8 @@ export default function Analytics() {
           <h3 className="mb-4 text-sm font-semibold text-text-soft">Projects by Status</h3>
           <div className="flex flex-wrap gap-3">
             {(data.project_status || []).map((p) => {
-              const colors = { Planning: '#7C5CFC', 'In Progress': '#3B6FE8', Completed: '#22C55E', Archived: '#8B93A7' }
-              const c = colors[p.status] || '#8B93A7'
+              const colors = { Planning: '#C7157D', 'In Progress': '#6C6AE8', Completed: '#22C55E', Archived: '#8A88A6' }
+              const c = colors[p.status] || '#8A88A6'
               return (
                 <div key={p.status} className="rounded-xl border border-border bg-card-2 px-4 py-3 text-center">
                   <div className="text-2xl font-bold" style={{ color: c }}>{p.count}</div>
@@ -211,14 +211,14 @@ function LineChart({ data, xKey, yKey, color }) {
       </defs>
       {[0, 0.5, 1].map((t) => (
         <line key={t} x1={pad} y1={pad + t * (h - pad * 2)} x2={w - pad} y2={pad + t * (h - pad * 2)}
-          stroke="#242B3D" strokeWidth="1" />
+          stroke="#262850" strokeWidth="1" />
       ))}
       <path d={area} fill="url(#lcGrad)" />
       <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       {points.map((p, i) => (
         <g key={i}>
           <circle cx={p.x} cy={p.y} r="3" fill={color} />
-          <text x={p.x} y={h - 6} textAnchor="middle" fontSize="8" fill="#8B93A7">
+          <text x={p.x} y={h - 6} textAnchor="middle" fontSize="8" fill="#8A88A6">
             {(p[xKey] || '').slice(5)}
           </text>
         </g>
@@ -249,7 +249,7 @@ function DonutChart({ data }) {
 
   return (
     <svg viewBox="0 0 120 120" className="h-[120px] w-[120px]">
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#1A1F2E" strokeWidth="14" />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#1A1B3E" strokeWidth="14" />
       {segments.map((s, i) => (
         <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.color} strokeWidth="14"
           strokeDasharray={s.dasharray} strokeDashoffset={s.dashoffset}
@@ -258,7 +258,7 @@ function DonutChart({ data }) {
       <text x={cx} y={cy - 2} textAnchor="middle" fontSize="18" fontWeight="bold" fill="#E6E9F0">
         {total}
       </text>
-      <text x={cx} y={cy + 12} textAnchor="middle" fontSize="8" fill="#8B93A7">Members</text>
+      <text x={cx} y={cy + 12} textAnchor="middle" fontSize="8" fill="#8A88A6">Members</text>
     </svg>
   )
 }
@@ -277,7 +277,7 @@ function StackedBarChart({ data, bars, xKey }) {
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full">
         {[0, 0.5, 1].map((t) => (
           <line key={t} x1={pad} y1={pad + t * (h - pad * 2)} x2={w - pad} y2={pad + t * (h - pad * 2)}
-            stroke="#242B3D" strokeWidth="1" />
+            stroke="#262850" strokeWidth="1" />
         ))}
         {data.map((d, i) => {
           const x = pad + (i + 0.5) * ((w - pad * 2) / data.length) - bw / 2
@@ -291,7 +291,7 @@ function StackedBarChart({ data, bars, xKey }) {
                 yBase = y
                 return <rect key={b.key} x={x} y={y} width={bw} height={Math.max(bh, 0)} fill={b.color} rx="2" />
               })}
-              <text x={x + bw / 2} y={h - 6} textAnchor="middle" fontSize="7" fill="#8B93A7">
+              <text x={x + bw / 2} y={h - 6} textAnchor="middle" fontSize="7" fill="#8A88A6">
                 {((d[xKey] || '').slice(5))}
               </text>
             </g>

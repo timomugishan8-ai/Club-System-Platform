@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Users, GraduationCap, ClipboardCheck,   Trophy, ChevronRight,
@@ -46,9 +46,9 @@ export default function Dashboard() {
   const firstName = user?.first_name || 'there'
 
   const stats = [
-    { label: 'Chapter Members', value: dash.chapter_members ?? 0, sub: 'Active this semester', trend: '↑12%', icon: Users, color: 'bg-accent-3' },
-    { label: 'Workshops Held', value: dash.workshops_held ?? 0, sub: 'This semester', trend: '↑27%', icon: GraduationCap, color: 'bg-accent-2' },
-    { label: 'Projects Completed', value: dash.projects_completed ?? 0, sub: 'By chapter members', trend: '↑35%', icon: ClipboardCheck, color: 'bg-positive' },
+    { label: 'Chapter Members', value: dash.chapter_members ?? 0, sub: 'Active this semester', trend: 'â†‘12%', icon: Users, color: 'bg-accent-3' },
+    { label: 'Workshops Held', value: dash.workshops_held ?? 0, sub: 'This semester', trend: 'â†‘27%', icon: GraduationCap, color: 'bg-accent-2' },
+    { label: 'Projects Completed', value: dash.projects_completed ?? 0, sub: 'By chapter members', trend: 'â†‘35%', icon: ClipboardCheck, color: 'bg-positive' },
     { label: 'Challenge Points', value: dash.my_points ?? 0, sub: 'Your total points', icon: Trophy, color: 'bg-amber' },
   ]
 
@@ -58,7 +58,7 @@ export default function Dashboard() {
       <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-bg-soft to-bg p-6 lg:p-8">
         <div className="relative z-10">
           <h1 className="text-2xl font-bold text-white lg:text-3xl">
-            Welcome back, <span className="text-gradient">{firstName}</span>! 👋
+            Welcome back, <span className="text-gradient">{firstName}</span>! ðŸ‘‹
           </h1>
           <p className="mt-1 text-sm text-text-muted">Track your growth. Build your skills. Make an impact.</p>
         </div>
@@ -66,14 +66,14 @@ export default function Dashboard() {
           <svg viewBox="0 0 400 200" className="h-full w-full">
             <defs>
               <linearGradient id="heroGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#3B6FE8" />
-                <stop offset="100%" stopColor="#7C5CFC" />
+                <stop offset="0%" stopColor="#6C6AE8" />
+                <stop offset="100%" stopColor="#C7157D" />
               </linearGradient>
             </defs>
             <polyline points="0,150 50,120 100,140 150,90 200,110 250,60 300,80 350,40 400,50"
               fill="none" stroke="url(#heroGrad)" strokeWidth="2" />
             {[50,120,140,90,110,60,80,40,50].map((y,i) => (
-              <circle key={i} cx={i*50} cy={y} r="3" fill="#7C5CFC" />
+              <circle key={i} cx={i*50} cy={y} r="3" fill="#C7157D" />
             ))}
           </svg>
         </div>
@@ -152,7 +152,7 @@ export default function Dashboard() {
           </div>
           <a href={`https://github.com/${github?.member_id || ''}`} target="_blank" rel="noreferrer"
             className="mt-4 flex items-center justify-center gap-1 rounded-lg border border-border py-2 text-sm text-text-soft hover:bg-card-2">
-            View GitHub Profile ↗
+            View GitHub Profile â†—
           </a>
         </div>
 
@@ -274,7 +274,7 @@ export default function Dashboard() {
               <div className="text-[11px] text-text-muted">Points to Next</div>
             </div>
             <div>
-              <div className="text-sm font-semibold text-accent">{progress?.next_tier || '—'}</div>
+              <div className="text-sm font-semibold text-accent">{progress?.next_tier || 'â€”'}</div>
               <div className="text-[11px] text-text-muted">Next Tier</div>
             </div>
           </div>
@@ -296,8 +296,8 @@ function ProgressRing({ percent }) {
           strokeLinecap="round" strokeDasharray={c} strokeDashoffset={offset} />
         <defs>
           <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#3B6FE8" />
-            <stop offset="100%" stopColor="#7C5CFC" />
+            <stop offset="0%" stopColor="#6C6AE8" />
+            <stop offset="100%" stopColor="#C7157D" />
           </linearGradient>
         </defs>
       </svg>
@@ -336,7 +336,7 @@ function EventRow({ event }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="truncate text-sm font-medium text-white">{event.title}</div>
-        <div className="text-xs text-text-muted">{event.start_time?.slice(0,5)} · {event.venue || 'TBD'}</div>
+        <div className="text-xs text-text-muted">{event.start_time?.slice(0,5)} Â· {event.venue || 'TBD'}</div>
       </div>
       <span className="rounded-full bg-accent-2/20 px-2 py-0.5 text-[11px] text-accent">Upcoming</span>
     </div>
@@ -344,8 +344,8 @@ function EventRow({ event }) {
 }
 
 function AnnouncementRow({ item }) {
-  const colors = { General: '#3B6FE8', Event: '#22C55E', Achievement: '#F59E0B', Urgent: '#EF4444' }
-  const c = colors[item.category] || '#3B6FE8'
+  const colors = { General: '#6C6AE8', Event: '#22C55E', Achievement: '#FFC53A', Urgent: '#D7014D' }
+  const c = colors[item.category] || '#6C6AE8'
   return (
     <div className="flex gap-3">
       <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: c + '20' }}>

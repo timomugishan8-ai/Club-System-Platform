@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
 import { MapPin, Clock } from 'lucide-react'
 
 const typeColors = {
-  Workshop: '#3B6FE8',
-  Hackathon: '#7C5CFC',
+  Workshop: '#6C6AE8',
+  Hackathon: '#C7157D',
   Social: '#22C55E',
-  Talk: '#F59E0B',
-  Other: '#8B93A7',
+  Talk: '#FFC53A',
+  Other: '#8A88A6',
 }
 
 export default function Events() {
@@ -49,7 +49,7 @@ export default function Events() {
               <div className="mt-3 space-y-1.5 text-xs text-text-muted">
                 {ev.start_time && (
                   <div className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5" /> {ev.start_time?.slice(0,5)}{ev.end_time ? ` – ${ev.end_time.slice(0,5)}` : ''}
+                    <Clock className="h-3.5 w-3.5" /> {ev.start_time?.slice(0,5)}{ev.end_time ? ` â€“ ${ev.end_time.slice(0,5)}` : ''}
                   </div>
                 )}
                 {ev.venue && (

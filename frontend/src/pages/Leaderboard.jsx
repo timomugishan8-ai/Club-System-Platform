@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
 import { useAuth } from '../context/AuthContext'
@@ -6,7 +6,7 @@ import { Trophy } from 'lucide-react'
 
 const TIERS = [
   { name: 'Diamond',     color: '#06B6D4' },
-  { name: 'Gold',        color: '#F59E0B' },
+  { name: 'Gold',        color: '#FFC53A' },
   { name: 'Silver',      color: '#9CA3AF' },
   { name: 'Bronze',      color: '#92400E' },
   { name: 'Rising Star', color: '#14B8A6' },
@@ -46,7 +46,7 @@ export default function Leaderboard() {
               className="rounded-full px-3 py-1 font-medium"
               style={{ backgroundColor: t.color + '20', color: t.color }}
             >
-              {t.name} ≥ {tiers[t.name] ?? 0}
+              {t.name} â‰¥ {tiers[t.name] ?? 0}
             </span>
           ))}
         </div>

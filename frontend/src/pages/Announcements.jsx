@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
 import { useAuth } from '../context/AuthContext'
 import { Megaphone, Plus, X, Pin } from 'lucide-react'
 
 const catColors = {
-  General: '#3B6FE8',
+  General: '#6C6AE8',
   Event: '#22C55E',
-  Achievement: '#F59E0B',
-  Urgent: '#EF4444',
+  Achievement: '#FFC53A',
+  Urgent: '#D7014D',
 }
 
 export default function Announcements() {
@@ -65,7 +65,7 @@ export default function Announcements() {
                   </div>
                   <p className="mt-1.5 text-sm text-text-muted">{a.body}</p>
                   <div className="mt-2 text-xs text-text-muted">
-                    {a.created_by_name} · {new Date(a.created_at).toLocaleDateString()}
+                    {a.created_by_name} Â· {new Date(a.created_at).toLocaleDateString()}
                   </div>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import chapterLogo from '../assets/chapter-logo.jpg'
@@ -34,7 +34,7 @@ export default function Login() {
     <div
       className="relative flex min-h-screen items-center justify-center px-4"
       style={{
-        backgroundImage: `linear-gradient(rgba(10, 14, 20, 0.82), rgba(10, 14, 20, 0.94)), url(${frontCover})`,
+        backgroundImage: `linear-gradient(rgba(5, 6, 26, 0.78), rgba(5, 6, 26, 0.92)), url(${frontCover})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
@@ -84,7 +84,7 @@ export default function Login() {
                 onChange={handleChange}
                 required
                 className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none"
-                placeholder="••••••••"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
               />
             </label>
             <button
@@ -92,7 +92,7 @@ export default function Login() {
               disabled={loading}
               className="w-full rounded-lg bg-gradient-accent py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {loading ? 'Logging in…' : 'Log in'}
+              {loading ? 'Logging inâ€¦' : 'Log in'}
             </button>
           </form>
 

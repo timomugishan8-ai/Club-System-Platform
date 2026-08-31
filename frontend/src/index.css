@@ -1,31 +1,35 @@
 @import "tailwindcss";
 
 @theme {
-  /* Backgrounds */
-  --color-bg: #0A0E14;
-  --color-bg-soft: #0D1220;
-  --color-card: #131826;
-  --color-card-2: #161C2C;
-  --color-border: #242B3D;
+  /* Backgrounds (deep navy from UCU brand #010035) */
+  --color-bg: #05061A;
+  --color-bg-soft: #0A0B24;
+  --color-card: #12132E;
+  --color-card-2: #161737;
+  --color-border: #262850;
 
   /* Text */
-  --color-text: #E6E9F0;
-  --color-text-soft: #B4BBD0;
-  --color-text-muted: #8B93A7;
+  --color-text: #ECEAF6;
+  --color-text-soft: #B9B7D0;
+  --color-text-muted: #8A88A6;
 
-  /* Accents (blue → purple) */
-  --color-accent: #4C7DFF;
-  --color-accent-2: #3B6FE8;
-  --color-accent-3: #7C5CFC;
-  --color-accent-grad: linear-gradient(135deg, #3B6FE8, #7C5CFC);
+  /* Accents (UCU magenta → royal indigo) */
+  --color-accent: #C7157D;
+  --color-accent-2: #E22E9A;
+  --color-accent-3: #6C6AE8;
+  --color-accent-grad: linear-gradient(135deg, #C7157D, #6C6AE8);
+
+  /* UCU gold + cream */
+  --color-gold: #FFC53A;
+  --color-cream: #E1D6CB;
 
   /* Semantic */
   --color-positive: #22C55E;
   --color-positive-soft: #16291F;
-  --color-amber: #F59E0B;
-  --color-amber-soft: #2A1F12;
-  --color-danger: #EF4444;
-  --color-danger-soft: #2A1414;
+  --color-amber: #FFC53A;
+  --color-amber-soft: #2C2310;
+  --color-danger: #D7014D;
+  --color-danger-soft: #2C1017;
 
   /* GitHub heatmap greens */
   --color-gh-0: #1A2E22;
@@ -71,7 +75,7 @@
     border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #2F3850;
+    background: #34366A;
   }
 }
 

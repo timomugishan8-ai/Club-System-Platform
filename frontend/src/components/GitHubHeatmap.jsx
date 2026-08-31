@@ -1,7 +1,7 @@
-import { useMemo } from 'react'
+﻿import { useMemo } from 'react'
 
 const GH_COLORS = [
-  '#161B27', // 0 contributions (matches card bg)
+  '#12132E', // 0 contributions (matches card bg)
   '#0E4429',
   '#006D32',
   '#26A641',
