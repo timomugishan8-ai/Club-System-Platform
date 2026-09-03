@@ -202,6 +202,27 @@ describe("pointService", () => {
             );
         });
 
+        test("tops up points when PR count grows since last refresh", (done) => {
+            mockDb.existingGitHubPoints = 6; // 3 PRs already awarded
+            const pointService = loadService();
+            pointService.awardGitHubPoints(10, { pr_count: 5 }, () => {
+                expect(mockDb.insertedParticipation).toHaveLength(1);
+                expect(mockDb.insertedParticipation[0].points).toBe(4);
+                expect(badgeService.evaluateBadges).toHaveBeenCalledWith(10, expect.any(Function));
+                done();
+            });
+        });
+
+        test("awards nothing when PR count has not grown", (done) => {
+            mockDb.existingGitHubPoints = 6; // 3 PRs already awarded
+            const pointService = loadService();
+            pointService.awardGitHubPoints(10, { pr_count: 3 }, () => {
+                expect(mockDb.insertedParticipation).toHaveLength(0);
+                expect(badgeService.evaluateBadges).toHaveBeenCalled();
+                done();
+            });
+        });
+
         test("no PRs means no participation record but badges still evaluated", (done) => {
             const pointService = loadService();
             pointService.awardGitHubPoints(10, { pr_count: 0 }, () => {

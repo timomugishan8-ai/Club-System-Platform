@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import useSidebarCounts from '../hooks/useSidebarCounts'
 import {
   LayoutDashboard, User, TrendingUp, BookOpen, FolderGit2,
   CalendarCheck, Trophy, Megaphone, Database, Settings,
@@ -20,8 +21,9 @@ const navItems = [
   { to: '/articles', label: 'Articles', icon: FileText },
   { to: '/resources', label: 'Resources', icon: Database },
   { to: '/events', label: 'Events', icon: BookOpen },
-  { to: '/settings', label: 'Settings', icon: Settings },
 ]
+
+const settingsItem = { to: '/settings', label: 'Settings', icon: Settings }
 
 const leaderItems = [
   { to: '/admin/articles', label: 'Article Review', icon: ClipboardCheck },
@@ -35,14 +37,51 @@ const adminItems = [
   { to: '/admin/articles', label: 'Article Review', icon: ClipboardCheck },
 ]
 
+const navLinkClass = ({ isActive }) =>
+  `flex items-center gap-3 rounded-[10px] px-3 py-[14px] text-sm transition-colors ${
+    isActive
+      ? 'bg-gradient-accent font-medium text-white'
+      : 'text-text-muted hover:bg-card hover:text-text-soft'
+  }`
+
+function Badge({ count }) {
+  if (!count || count <= 0) return null
+  return (
+    <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-bold leading-none text-white">
+      {count > 99 ? '99+' : count}
+    </span>
+  )
+}
+
 export default function Sidebar({ onCollapse }) {
   const { user, logout, isAdmin, isLeader } = useAuth()
   const navigate = useNavigate()
+  const { counts } = useSidebarCounts()
 
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
+
+  // Map sidebar routes to badge count keys
+  const badgeKey = {
+    '/meetings': 'meetings',
+    '/announcements': 'announcements',
+    '/events': 'events',
+    '/projects': 'projects',
+    '/admin/pending': 'pending',
+    '/admin/members': 'admin/members',
+    '/admin/articles': 'admin/articles',
+  }
+
+  // Merge all sections into one scrollable list. Admins get the admin items
+  // appended after the main nav; non-admin leaders get leader items instead.
+  // Settings always sits at the very end of the list.
+  const items = isAdmin
+    ? [...navItems, ...adminItems, settingsItem]
+    : isLeader
+      ? [...navItems, ...leaderItems, settingsItem]
+      : [...navItems, settingsItem]
 
   return (
     <aside className="flex h-full w-[260px] flex-col border-r border-border bg-bg-soft">
@@ -64,9 +103,9 @@ export default function Sidebar({ onCollapse }) {
         </p>
       </div>
 
-      {/* Nav */}
+      {/* Nav — single scrollable list containing every section */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const Icon = item.icon
           return (
             <NavLink
@@ -74,82 +113,17 @@ export default function Sidebar({ onCollapse }) {
               to={item.to}
               end={item.end}
               onClick={onCollapse}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-[10px] px-3 py-[14px] text-sm transition-colors ${
-                  isActive
-                    ? 'bg-gradient-accent font-medium text-white'
-                    : 'text-text-muted hover:bg-card hover:text-text-soft'
-                }`
-              }
+              className={navLinkClass}
             >
               <Icon className="h-[18px] w-[18px]" />
               {item.label}
+              {badgeKey[item.to] && (
+                <Badge count={counts[badgeKey[item.to]]} />
+              )}
             </NavLink>
           )
         })}
       </nav>
-
-      {/* Leader section (non-admin leaders) */}
-      {isLeader && !isAdmin && (
-        <div className="border-t border-border px-3 py-2">
-          <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-            Leader
-          </p>
-          <div className="space-y-1">
-            {leaderItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={onCollapse}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-[10px] px-3 py-[14px] text-sm transition-colors ${
-                      isActive
-                        ? 'bg-gradient-accent font-medium text-white'
-                        : 'text-text-muted hover:bg-card hover:text-text-soft'
-                    }`
-                  }
-                >
-                  <Icon className="h-[18px] w-[18px]" />
-                  {item.label}
-                </NavLink>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Admin section */}
-      {isAdmin && (
-        <div className="border-t border-border px-3 py-2">
-          <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-            Admin
-          </p>
-          <div className="space-y-1">
-            {adminItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={onCollapse}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-[10px] px-3 py-[14px] text-sm transition-colors ${
-                      isActive
-                        ? 'bg-gradient-accent font-medium text-white'
-                        : 'text-text-muted hover:bg-card hover:text-text-soft'
-                    }`
-                  }
-                >
-                  <Icon className="h-[18px] w-[18px]" />
-                  {item.label}
-                </NavLink>
-              )
-            })}
-          </div>
-        </div>
-      )}
 
       {/* User card */}
       <div className="border-t border-border p-3">

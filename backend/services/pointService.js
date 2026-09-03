@@ -212,33 +212,34 @@ const pointService = {
         const { pr_count } = stats;
 
         const sql = `
-            SELECT participation_id FROM participation
+            SELECT COALESCE(SUM(points), 0) AS awarded_points
+            FROM participation
             WHERE member_id = ? AND activity = 'GitHub PR Merged'
-            LIMIT 1
         `;
         db.query(sql, [memberId], (err, rows) => {
             if (err) return callback(err);
-            if (rows.length > 0) return callback(null);
+
+            const awardedPoints = rows[0]?.awarded_points || 0;
+            const targetPoints = (pr_count || 0) * 2;
+            const newPoints = targetPoints - awardedPoints;
+            if (newPoints <= 0) {
+                return badgeService.evaluateBadges(memberId, callback);
+            }
 
             const lastMeetingSql = "SELECT meeting_id FROM meetings ORDER BY meeting_date DESC LIMIT 1";
             db.query(lastMeetingSql, (err, meetings) => {
                 if (err || meetings.length === 0) return callback(null);
 
-                const totalPrPoints = (pr_count || 0) * 2;
-                if (totalPrPoints > 0) {
-                    Participation.create({
-                        meeting_id: meetings[0].meeting_id,
-                        member_id: memberId,
-                        activity: "GitHub PR Merged",
-                        points: totalPrPoints,
-                        pillar: "Projects & GitHub",
-                        remarks: "Auto-awarded from GitHub refresh"
-                    }, () => {
-                        badgeService.evaluateBadges(memberId, callback);
-                    });
-                } else {
+                Participation.create({
+                    meeting_id: meetings[0].meeting_id,
+                    member_id: memberId,
+                    activity: "GitHub PR Merged",
+                    points: newPoints,
+                    pillar: "Projects & GitHub",
+                    remarks: "Auto-awarded from GitHub refresh"
+                }, () => {
                     badgeService.evaluateBadges(memberId, callback);
-                }
+                });
             });
         });
     },

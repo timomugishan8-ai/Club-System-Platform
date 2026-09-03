@@ -3,38 +3,38 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Backgrounds (deep navy from UCU brand #010035) */
-  --color-bg: #05061A;
-  --color-bg-soft: #0A0B24;
-  --color-card: #12132E;
-  --color-card-2: #161737;
-  --color-border: #262850;
+  /* Backgrounds: near-black with a dark-blue cast */
+  --color-bg: #0A0D14;
+  --color-bg-soft: #0E121B;
+  --color-card: #131826;
+  --color-card-2: #172032;
+  --color-border: #233048;
 
-  /* Text */
-  --color-text: #ECEAF6;
-  --color-text-soft: #B9B7D0;
-  --color-text-muted: #8A88A6;
+  /* Text: cool off-white & slate */
+  --color-text: #E9ECF2;
+  --color-text-soft: #B7BFCF;
+  --color-text-muted: #7E879B;
 
-  /* Accents (UCU magenta → royal indigo) */
-  --color-accent: #C7157D;
-  --color-accent-2: #E22E9A;
-  --color-accent-3: #6C6AE8;
-  --color-accent-grad: linear-gradient(135deg, #C7157D, #6C6AE8);
+  /* Accents: muted steel blue → slate teal */
+  --color-accent: #3D6899;
+  --color-accent-2: #5B8AB8;
+  --color-accent-3: #4E8E86;
+  --color-accent-grad: linear-gradient(135deg, #2C4A6E, #5B8AB8);
 
   /* UCU gold + cream */
   --color-gold: #FFC53A;
   --color-cream: #E1D6CB;
 
-  /* Semantic */
-  --color-positive: #22C55E;
-  --color-positive-soft: #16291F;
-  --color-amber: #FFC53A;
-  --color-amber-soft: #2C2310;
-  --color-danger: #D7014D;
-  --color-danger-soft: #2C1017;
+  /* Semantic (muted, natural) */
+  --color-positive: #4E9E63;
+  --color-positive-soft: #16211A;
+  --color-amber: #D9A441;
+  --color-amber-soft: #26200F;
+  --color-danger: #C2543F;
+  --color-danger-soft: #27150F;
 
   /* GitHub heatmap greens */
-  --color-gh-0: #1A2E22;
+  --color-gh-0: #1E2A20;
   --color-gh-1: #0E4429;
   --color-gh-2: #006D32;
   --color-gh-3: #26A641;
@@ -82,19 +82,19 @@
     --color-accent-grad: linear-gradient(135deg, #0B3D91, #4F7BE8);
   }
 
-  /* Dark mode */
+  /* Dark mode (black with dark-blue tint) */
   html.dark {
-    --color-bg: #05061A;
-    --color-bg-soft: #0A0B24;
-    --color-card: #12132E;
-    --color-card-2: #161737;
-    --color-border: #262850;
-    --color-text: #ECEAF6;
-    --color-text-soft: #B9B7D0;
-    --color-text-muted: #8A88A6;
-    --color-positive-soft: #16291F;
-    --color-amber-soft: #2C2310;
-    --color-danger-soft: #2C1017;
+    --color-bg: #0A0D14;
+    --color-bg-soft: #0E121B;
+    --color-card: #131826;
+    --color-card-2: #172032;
+    --color-border: #233048;
+    --color-text: #E9ECF2;
+    --color-text-soft: #B7BFCF;
+    --color-text-muted: #7E879B;
+    --color-positive-soft: #16211A;
+    --color-amber-soft: #26200F;
+    --color-danger-soft: #27150F;
   }
 
   * {
@@ -113,7 +113,7 @@
     border-radius: 999px;
   }
   html.dark ::-webkit-scrollbar-thumb:hover {
-    background: #34366A;
+    background: #33436A;
   }
   html.light ::-webkit-scrollbar-thumb:hover {
     background: #C9C6DE;

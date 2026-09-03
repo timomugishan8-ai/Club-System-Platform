@@ -3,19 +3,64 @@ import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
-import { Mail, Phone, BookOpen, GitBranch, Calendar, User } from 'lucide-react'
+import GitHubHeatmap from '../components/GitHubHeatmap'
+import { Mail, Phone, BookOpen, GitBranch, Calendar, User, RefreshCw, Pencil, Flame } from 'lucide-react'
 
 export default function Profile() {
   const { id } = useParams()
   const { user } = useAuth()
   const targetId = id || user?.member_id
+  const isMe = String(targetId) === String(user?.member_id)
   const [member, setMember] = useState(null)
+  const [github, setGithub] = useState(null)
+  const [activity, setActivity] = useState([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [editHandle, setEditHandle] = useState(false)
+  const [handle, setHandle] = useState('')
+  const [msg, setMsg] = useState('')
+  const [error, setError] = useState('')
+
+  const load = () => {
+    api.members.getById(targetId).then((d) => {
+      setMember(d.member)
+      setHandle(d.member.github_handle || '')
+    }).finally(() => setLoading(false))
+    api.github.memberStats(targetId).then((d) => setGithub(d.stats)).catch(() => setGithub(null))
+    api.github.memberActivity(targetId).then((d) => setActivity(d.activity || [])).catch(() => setActivity([]))
+  }
 
   useEffect(() => {
     if (!targetId) return
-    api.members.getById(targetId).then((d) => setMember(d.member)).finally(() => setLoading(false))
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetId])
+
+  const refreshStats = async () => {
+    setRefreshing(true); setMsg(''); setError('')
+    try {
+      await api.github.refreshMy()
+      setMsg('GitHub stats refreshed.')
+      api.github.memberStats(targetId).then((d) => setGithub(d.stats)).catch(() => {})
+      api.github.memberActivity(targetId).then((d) => setActivity(d.activity || [])).catch(() => {})
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  const saveHandle = async (e) => {
+    e.preventDefault()
+    setMsg(''); setError('')
+    try {
+      await api.members.updateMe({ github_handle: handle.trim() || null })
+      await refreshStats()
+      load()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
 
   if (loading) return <Spinner className="py-20" />
   if (!member) return <p className="py-10 text-center text-text-muted">Member not found.</p>
@@ -43,8 +88,25 @@ export default function Profile() {
               </span>
             )}
           </div>
+          {isMe && (
+            <div className="flex flex-shrink-0 flex-col gap-2">
+              <button onClick={refreshStats} disabled={refreshing || !member.github_handle}
+                title={!member.github_handle ? 'Link your GitHub handle first' : 'Fetch latest GitHub stats'}
+                className="flex items-center gap-2 rounded-lg bg-gradient-accent px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Syncing…' : 'Refresh GitHub Stats'}
+              </button>
+              <button onClick={() => { setEditHandle(true); setMsg(''); setError('') }}
+                className="rounded-lg border border-border px-4 py-2 text-sm text-text-soft hover:bg-card-2">
+                {member.github_handle ? 'Change GitHub Handle' : 'Link GitHub Account'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {msg && <div className="rounded-lg border border-positive/30 bg-positive-soft px-4 py-2 text-sm text-positive">{msg}</div>}
+      {error && <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-2 text-sm text-danger">{error}</div>}
 
       {/* Details */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -55,6 +117,80 @@ export default function Profile() {
         <DetailCard icon={GitBranch} label="GitHub" value={member.github_handle || 'Not linked'} />
         <DetailCard icon={Calendar} label="Joined" value={member.join_date || '—'} />
       </div>
+
+      {/* GitHub activity */}
+      {member.github_handle && (
+        <div className="card p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-text-soft">
+              <GitBranch className="h-4 w-4" /> GitHub Activity
+            </h3>
+            {member.github_handle && (
+              <a href={`https://github.com/${member.github_handle}`} target="_blank" rel="noreferrer"
+                className="text-xs text-accent hover:underline">
+                @{member.github_handle} ↗
+              </a>
+            )}
+          </div>
+          {github && (github.repo_count > 0 || github.commit_count > 0 || github.pr_count > 0 || github.issue_count > 0) ? (
+            <>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                {[
+                  { label: 'Repositories', value: github.repo_count },
+                  { label: 'Commits', value: github.commit_count },
+                  { label: 'Pull Requests', value: github.pr_count },
+                  { label: 'Issues', value: github.issue_count },
+                  { label: 'Stars', value: github.star_count },
+                  { label: 'Day Streak', value: github.streak_days, flame: true },
+                ].map((m) => (
+                  <div key={m.label} className="rounded-lg bg-card-2 p-3">
+                    <div className="text-lg font-bold text-text">
+                      {m.flame && m.value > 0 && <Flame className="mr-1.5 inline h-4 w-4 text-amber" />}
+                      {m.value}
+                    </div>
+                    <div className="mt-1 text-[11px] leading-snug text-text-muted">{m.label}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4">
+                <GitHubHeatmap activity={activity} />
+              </div>
+            </>
+          ) : (
+            <p className="py-4 text-center text-sm text-text-muted">
+              {isMe
+                ? 'No stats yet — hit "Refresh GitHub Stats" to sync your activity.'
+                : 'No GitHub stats synced for this member yet.'}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* GitHub link editor */}
+      {isMe && editHandle && (
+        <div className="card p-5">
+          <h3 className="mb-3 text-sm font-semibold text-text-soft">GitHub Account</h3>
+          <form onSubmit={saveHandle} className="space-y-3">
+            <input value={handle}
+              onChange={(e) => setHandle(e.target.value)}
+              placeholder="GitHub handle (without @), e.g. octocat"
+              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
+            <p className="text-xs text-text-muted">
+              Saving your handle also triggers a stats refresh for the dashboard heatmap.
+            </p>
+            <div className="flex gap-2">
+              <button type="submit"
+                className="rounded-lg bg-gradient-accent px-4 py-2 text-sm font-semibold text-white">
+                Save &amp; Sync
+              </button>
+              <button type="button" onClick={() => setEditHandle(false)}
+                className="rounded-lg border border-border px-4 py-2 text-sm text-text-soft hover:bg-card">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {member.bio && (
         <div className="card p-5">

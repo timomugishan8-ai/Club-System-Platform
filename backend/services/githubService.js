@@ -4,26 +4,45 @@ const GitHubContribution = require("../models/GitHubContribution");
 const GITHUB_API = "https://api.github.com";
 
 const headers = () => {
-    const h = { Accept: "application/vnd.github+json" };
+    const h = {
+        Accept: "application/vnd.github+json",
+        // GitHub API requires a User-Agent; requests without one are refused.
+        "User-Agent": "ds-chapter-tracker",
+    };
     if (process.env.GITHUB_TOKEN) {
         h.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
     }
     return h;
 };
 
-const ghFetch = async (url) => {
-    const res = await fetch(url, { headers: headers() });
-    if (res.status === 404) return null;
-    if (res.status === 403) {
-        const remaining = res.headers.get("x-ratelimit-remaining");
-        if (remaining === "0") {
-            throw new Error("GitHub API rate limit exceeded.");
+const ghFetch = async (url, retries = 2) => {
+    try {
+        const res = await fetch(url, { headers: headers() });
+        if (res.status === 404) return null;
+        if (res.status === 403) {
+            const remaining = res.headers.get("x-ratelimit-remaining");
+            if (remaining === "0") {
+                throw new Error("GitHub API rate limit exceeded.");
+            }
         }
+        if (!res.ok) {
+            throw new Error(`GitHub API error: ${res.status}`);
+        }
+        return res.json();
+    } catch (err) {
+        // Transient network/socket errors: retry, then surface the failure.
+        if (
+            retries > 0 &&
+            err &&
+            (err.cause?.code === "ECONNRESET" ||
+                err.cause?.code === "UND_ERR_SOCKET" ||
+                /fetch failed|socket hang up/i.test(String(err.message)))
+        ) {
+            await new Promise((r) => setTimeout(r, 400));
+            return ghFetch(url, retries - 1);
+        }
+        throw err;
     }
-    if (!res.ok) {
-        throw new Error(`GitHub API error: ${res.status}`);
-    }
-    return res.json();
 };
 
 const fetchAllRepos = async (handle) => {
@@ -58,20 +77,26 @@ const fetchUserEvents = async (handle) => {
 
 const aggregateStats = (repos, events) => {
     let commitCount = 0;
-    let prCount = 0;
-    let issueCount = 0;
+    const prKeys = new Set();
+    const issueKeys = new Set();
 
     for (const event of events) {
+        const payload = event.payload || {};
         if (event.type === "PushEvent") {
-            commitCount += (event.payload && event.payload.commits)
-                ? event.payload.commits.length
-                : 0;
+            // payload.commits is capped at 20 per push; payload.size carries the true total.
+            commitCount += payload.size || (payload.commits ? payload.commits.length : 0);
         } else if (event.type === "PullRequestEvent") {
-            prCount += 1;
+            // Deduplicate: one PR fires many events (opened, closed, synchronized, ...).
+            const pr = payload.pull_request;
+            if (pr) prKeys.add(`${event.repo ? event.repo.id : "r"}:${pr.number}`);
         } else if (event.type === "IssuesEvent") {
-            issueCount += 1;
+            const issue = payload.issue;
+            if (issue) issueKeys.add(`${event.repo ? event.repo.id : "r"}:${issue.number}`);
         }
     }
+
+    const prCount = prKeys.size;
+    const issueCount = issueKeys.size;
 
     const repoCount = repos.length;
     const starCount = repos.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
@@ -134,4 +159,71 @@ const refreshForMember = (memberId, githubHandle) => {
     });
 };
 
-module.exports = { refreshForMember };
+// Refresh every member that has a GitHub handle linked. Used by the nightly
+// scheduler and callable from an admin trigger. Serialized to stay under the
+// GitHub rate limit (60 req/hr unauthenticated, 5000 with a token).
+const refreshAllMembers = async ({ onResult } = {}) => {
+    const members = await new Promise((resolve, reject) => {
+        db.query(
+            "SELECT member_id, github_handle FROM members WHERE github_handle IS NOT NULL AND github_handle != ''",
+            (err, rows) => (err ? reject(err) : resolve(rows))
+        );
+    });
+
+    const results = { refreshed: 0, failed: 0, skipped: 0, errors: [] };
+
+    for (const member of members) {
+        try {
+            await refreshForMember(member.member_id, member.github_handle);
+            results.refreshed++;
+            if (onResult) onResult(null, member);
+        } catch (error) {
+            results.failed++;
+            results.errors.push({ member_id: member.member_id, message: error.message });
+            if (onResult) onResult(error, member);
+        }
+        // Small delay between members to spread API calls out.
+        await new Promise((r) => setTimeout(r, 250));
+    }
+
+    return results;
+};
+
+// Nightly scheduler: runs once a day at the configured hour (default 03:00).
+// Interval-based check so a server restart simply re-arms the timer.
+const startNightlyRefresh = ({ hour = 3 } = {}) => {
+    const hasRunToday = () => {
+        const run = new Date();
+        run.setHours(hour, 0, 0, 0);
+        const last = lastRunAt ? new Date(lastRunAt) : null;
+        return last && last >= run;
+    };
+
+    let lastRunAt = null;
+    let running = false;
+
+    const tick = async () => {
+        const now = new Date();
+        if (now.getHours() !== hour || running || hasRunToday()) return;
+        running = true;
+        lastRunAt = now.toISOString();
+        try {
+            const results = await refreshAllMembers();
+            console.log(
+                `[github] nightly refresh: ${results.refreshed} refreshed, ` +
+                `${results.failed} failed, ${results.skipped} skipped`
+            );
+        } catch (error) {
+            console.error("[github] nightly refresh failed:", error.message);
+        } finally {
+            running = false;
+        }
+    };
+
+    const timer = setInterval(tick, 15 * 60 * 1000); // check every 15 min
+    timer.unref(); // don't hold the process open just for this
+
+    return { stop: () => clearInterval(timer) };
+};
+
+module.exports = { refreshForMember, refreshAllMembers, startNightlyRefresh };

@@ -31,6 +31,19 @@ const updateProfile = (req, res) => {
     }
 
     const data = req.body;
+
+    // Validate GitHub handle format if provided (GitHub: alphanumerics and
+    // single hyphens, max 39 chars, cannot start/end with a hyphen).
+    if (data.github_handle) {
+        const handle = String(data.github_handle).replace(/^@/, "").trim();
+        if (!/^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/.test(handle)) {
+            return res.status(400).json({
+                message: "Invalid GitHub handle. Use only letters, numbers, and single hyphens (no spaces, dots or @)."
+            });
+        }
+        data.github_handle = handle;
+    }
+
     Member.updateProfile(memberId, data, (err) => {
         if (err) return res.status(500).json({ message: "Profile update failed." });
         res.json({ message: "Profile updated." });

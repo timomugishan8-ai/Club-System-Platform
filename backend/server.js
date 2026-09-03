@@ -6,6 +6,7 @@ const cors = require("cors");
 
 const db = require("./config/db");
 const errorHandler = require("./middleware/errorHandler");
+const { startNightlyRefresh } = require("./services/githubService");
 
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
@@ -24,6 +25,7 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const adminOverviewRoutes = require("./routes/adminOverviewRoutes");
 const articleRoutes = require("./routes/articleRoutes");
+const sidebarCountRoutes = require("./routes/sidebarCountRoutes");
 const badgeRoutes = require("./routes/badgeRoutes");
 const pointAdjustmentRoutes = require("./routes/pointAdjustmentRoutes");
 
@@ -54,6 +56,7 @@ app.use("/api/admin", adminOverviewRoutes);
 app.use("/api/articles", articleRoutes);
 app.use("/api/badges", badgeRoutes);
 app.use("/api/point-adjustments", pointAdjustmentRoutes);
+app.use("/api/sidebar-counts", sidebarCountRoutes);
 
 // Health check
 app.get("/", (req, res) => {
@@ -68,4 +71,9 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
+
+    // Nightly GitHub stats refresh (03:00 by default, GITHUB_REFRESH_HOUR to change).
+    startNightlyRefresh({
+        hour: parseInt(process.env.GITHUB_REFRESH_HOUR || "3", 10)
+    });
 });

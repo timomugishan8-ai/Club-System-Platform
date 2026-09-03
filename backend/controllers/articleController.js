@@ -95,7 +95,7 @@ const create = (req, res) => {
         file_size: file.size,
         file_type: fileType,
         cover_image: coverPath,
-        reading_time,
+        reading_time: readingTime,
         status: "Draft"
     }, (err, result) => {
         if (err) return res.status(500).json({ message: "Failed to create article." });

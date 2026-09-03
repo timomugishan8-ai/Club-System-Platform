@@ -94,22 +94,31 @@ const Member = {
     },
 
     updateProfile: (memberId, data, callback) => {
-        const sql = `
-            UPDATE members
-            SET first_name = ?, last_name = ?, gender = ?, phone = ?,
-                course = ?, year_of_study = ?, committee_id = ?,
-                github_handle = ?, avatar_url = ?, bio = ?,
-                notify_email = ?, notify_inapp = ?, theme = ?
-            WHERE member_id = ?
-        `;
-        const params = [
-            data.first_name, data.last_name, data.gender, data.phone,
-            data.course, data.year_of_study, data.committee_id,
-            data.github_handle, data.avatar_url, data.bio,
-            data.notify_email, data.notify_inapp, data.theme,
-            memberId
+        // Only update the fields that were actually provided, so partial
+        // updates (e.g. just the GitHub handle) don't wipe other columns.
+        const allowed = [
+            "first_name", "last_name", "gender", "phone",
+            "course", "year_of_study", "committee_id",
+            "github_handle", "avatar_url", "bio",
+            "notify_email", "notify_inapp", "theme",
         ];
-        db.query(sql, params, callback);
+        const sets = [];
+        const params = [];
+        allowed.forEach((col) => {
+            if (data[col] !== undefined) {
+                sets.push(`${col} = ?`);
+                params.push(data[col]);
+            }
+        });
+        if (sets.length === 0) {
+            return callback(null);
+        }
+        params.push(memberId);
+        db.query(
+            `UPDATE members SET ${sets.join(", ")} WHERE member_id = ?`,
+            params,
+            callback
+        );
     },
 
     updatePassword: (memberId, passwordHash, callback) => {

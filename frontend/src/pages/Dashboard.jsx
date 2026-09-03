@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [dash, setDash] = useState(null)
   const [progress, setProgress] = useState(null)
   const [github, setGithub] = useState(null)
+  const [handle, setHandle] = useState('')
   const [activity, setActivity] = useState([])
   const [leaderboard, setLeaderboard] = useState([])
   const [allBadges, setAllBadges] = useState([])
@@ -29,7 +30,8 @@ export default function Dashboard() {
       api.leaderboard.all().catch(() => null),
       api.badges.all().catch(() => null),
       api.badges.mine().catch(() => null),
-    ]).then(([d, p, g, a, l, bAll, bMine]) => {
+      api.members.me().catch(() => null),
+    ]).then(([d, p, g, a, l, bAll, bMine, me]) => {
       setDash(d?.dashboard || {})
       setProgress(p?.progress || null)
       setGithub(g?.stats || null)
@@ -37,6 +39,7 @@ export default function Dashboard() {
       setLeaderboard(l?.leaderboard?.slice(0, 5) || [])
       setAllBadges(bAll?.badges || [])
       setMyBadges(bMine?.badges || [])
+      setHandle(me?.member?.github_handle || '')
       setLoading(false)
     })
   }, [])
@@ -152,10 +155,17 @@ export default function Dashboard() {
           <div className="mt-4">
             <GitHubHeatmap activity={activity} />
           </div>
-          <a href={`https://github.com/${github?.member_id || ''}`} target="_blank" rel="noreferrer"
-            className="mt-4 flex items-center justify-center gap-1 rounded-lg border border-border py-2 text-sm text-text-soft hover:bg-card-2">
-            View GitHub Profile ↗
-          </a>
+          {github && (github.repo_count > 0 || github.commit_count > 0 || github.issue_count > 0) ? (
+            <a href={`https://github.com/${handle}`} target="_blank" rel="noreferrer"
+              className="mt-4 flex items-center justify-center gap-1 rounded-lg border border-border py-2 text-sm text-text-soft hover:bg-card-2">
+              View GitHub Profile ↗
+            </a>
+          ) : (
+            <Link to="/profile"
+              className="mt-4 flex items-center justify-center gap-1 rounded-lg border border-dashed border-border py-2 text-sm text-text-muted hover:bg-card-2 hover:text-text-soft">
+              {handle ? 'No stats yet — refresh your GitHub stats' : 'Link your GitHub account to see stats'} →
+            </Link>
+          )}
         </div>
 
         {/* Leaderboard top 5 */}

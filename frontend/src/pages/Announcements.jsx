@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
 import { useAuth } from '../context/AuthContext'
-import { Megaphone, Plus, X, Pin } from 'lucide-react'
+import { Megaphone, Plus, X, Pin, Pencil, Trash2 } from 'lucide-react'
 
 const catColors = {
   General: 'var(--color-accent-3)',
@@ -16,7 +16,10 @@ export default function Announcements() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ title: '', body: '', category: 'General', is_pinned: false })
+  const [editing, setEditing] = useState(null)
+  const [deleting, setDeleting] = useState(null)
+  const emptyForm = { title: '', body: '', category: 'General', is_pinned: false }
+  const [form, setForm] = useState(emptyForm)
 
   const load = () => {
     api.announcements.list().then((d) => setItems(d.announcements || [])).finally(() => setLoading(false))
@@ -24,12 +27,37 @@ export default function Announcements() {
 
   useEffect(() => { load() }, [])
 
+  const openEdit = (a) => {
+    setEditing(a)
+    setForm({ title: a.title, body: a.body, category: a.category || 'General', is_pinned: !!a.is_pinned })
+    setShowForm(true)
+  }
+
   const submit = async (e) => {
     e.preventDefault()
-    await api.announcements.create(form)
-    setForm({ title: '', body: '', category: 'General', is_pinned: false })
-    setShowForm(false)
-    load()
+    try {
+      if (editing) {
+        await api.announcements.update(editing.announcement_id, form)
+      } else {
+        await api.announcements.create(form)
+      }
+      setForm(emptyForm)
+      setEditing(null)
+      setShowForm(false)
+      load()
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  const confirmDelete = async () => {
+    try {
+      await api.announcements.remove(deleting.announcement_id)
+      setDeleting(null)
+      load()
+    } catch (err) {
+      alert(err.message)
+    }
   }
 
   if (loading) return <Spinner className="py-20" />
@@ -39,7 +67,7 @@ export default function Announcements() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-text">Announcements</h1>
         {isAdmin && (
-          <button onClick={() => setShowForm(true)}
+          <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }}
             className="flex items-center gap-2 rounded-lg bg-gradient-accent px-4 py-2 text-sm font-semibold text-white">
             <Plus className="h-4 w-4" /> Post Announcement
           </button>
@@ -68,6 +96,20 @@ export default function Announcements() {
                     {a.created_by_name} · {new Date(a.created_at).toLocaleDateString()}
                   </div>
                 </div>
+                {isAdmin && (
+                  <div className="flex flex-shrink-0 self-start gap-1">
+                    <button onClick={() => openEdit(a)}
+                      className="rounded-md p-1.5 text-text-muted hover:bg-card-2 hover:text-accent-3"
+                      title="Edit announcement">
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => setDeleting(a)}
+                      className="rounded-md p-1.5 text-text-muted hover:bg-card-2 hover:text-red-400"
+                      title="Delete announcement">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )
@@ -78,7 +120,7 @@ export default function Announcements() {
       </div>
 
       {showForm && (
-        <Modal title="New Announcement" onClose={() => setShowForm(false)}>
+        <Modal title={editing ? 'Edit Announcement' : 'New Announcement'} onClose={() => { setShowForm(false); setEditing(null) }}>
           <form onSubmit={submit} className="space-y-3">
             <input required placeholder="Title" value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -101,9 +143,27 @@ export default function Announcements() {
             </label>
             <button type="submit"
               className="w-full rounded-lg bg-gradient-accent py-2 text-sm font-semibold text-white">
-              Post
+              {editing ? 'Save Changes' : 'Post'}
             </button>
           </form>
+        </Modal>
+      )}
+
+      {deleting && (
+        <Modal title="Delete Announcement" onClose={() => setDeleting(null)}>
+          <p className="text-sm text-text-muted">
+            Delete <span className="font-semibold text-text">“{deleting.title}”</span>? This cannot be undone.
+          </p>
+          <div className="mt-4 flex justify-end gap-2">
+            <button onClick={() => setDeleting(null)}
+              className="rounded-lg border border-border px-4 py-2 text-sm text-text-soft hover:bg-card">
+              Cancel
+            </button>
+            <button onClick={confirmDelete}
+              className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600">
+              Delete
+            </button>
+          </div>
         </Modal>
       )}
     </div>

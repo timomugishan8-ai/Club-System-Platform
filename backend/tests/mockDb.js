@@ -6,6 +6,7 @@ const mockDb = {
     attendanceRows: [],
     articleLikeCount: 0,
     existingLikePoints: 0,
+    existingGitHubPoints: 0,
 
     reset() {
         this.insertedParticipation = [];
@@ -15,6 +16,7 @@ const mockDb = {
         this.attendanceRows = [];
         this.articleLikeCount = 0;
         this.existingLikePoints = 0;
+        this.existingGitHubPoints = 0;
     },
 
     query(sql, params, callback) {
@@ -42,7 +44,11 @@ const mockDb = {
         }
 
         if (isParticipationCheck && sqlLower.includes("activity = 'github pr merged'")) {
-            return callback(null, []);
+            return callback(null, [{ awarded_points: this.existingGitHubPoints }]);
+        }
+
+        if (sqlLower.includes("coalesce(sum(points), 0)") && sqlLower.includes("github pr merged")) {
+            return callback(null, [{ awarded_points: this.existingGitHubPoints }]);
         }
 
         if (isParticipationCheck && sqlLower.includes("activity = ?")) {

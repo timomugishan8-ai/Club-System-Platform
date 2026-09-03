@@ -239,6 +239,11 @@ export const api = {
     byMember: (id) => request(`/badges/member/${id}`),
   },
 
+  // Sidebar badge counts
+  sidebarCounts: {
+    get: () => request('/sidebar-counts'),
+  },
+
   // Point Adjustments
   pointAdjustments: {
     activities: () => request('/point-adjustments/activities'),
