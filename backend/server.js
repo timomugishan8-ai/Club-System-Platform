@@ -28,6 +28,7 @@ const articleRoutes = require("./routes/articleRoutes");
 const sidebarCountRoutes = require("./routes/sidebarCountRoutes");
 const badgeRoutes = require("./routes/badgeRoutes");
 const pointAdjustmentRoutes = require("./routes/pointAdjustmentRoutes");
+const systemSettingsRoutes = require("./routes/systemSettingsRoutes");
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use("/api/articles", articleRoutes);
 app.use("/api/badges", badgeRoutes);
 app.use("/api/point-adjustments", pointAdjustmentRoutes);
 app.use("/api/sidebar-counts", sidebarCountRoutes);
+app.use("/api/system-settings", systemSettingsRoutes);
 
 // Health check
 app.get("/", (req, res) => {

@@ -3,8 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
-import GitHubHeatmap from '../components/GitHubHeatmap'
-import { Mail, Phone, BookOpen, GitBranch, Calendar, User, RefreshCw, Pencil, Flame } from 'lucide-react'
+import { Mail, Phone, BookOpen, GitBranch, Calendar, User, RefreshCw } from 'lucide-react'
 
 export default function Profile() {
   const { id } = useParams()
@@ -12,8 +11,6 @@ export default function Profile() {
   const targetId = id || user?.member_id
   const isMe = String(targetId) === String(user?.member_id)
   const [member, setMember] = useState(null)
-  const [github, setGithub] = useState(null)
-  const [activity, setActivity] = useState([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [editHandle, setEditHandle] = useState(false)
@@ -26,8 +23,6 @@ export default function Profile() {
       setMember(d.member)
       setHandle(d.member.github_handle || '')
     }).finally(() => setLoading(false))
-    api.github.memberStats(targetId).then((d) => setGithub(d.stats)).catch(() => setGithub(null))
-    api.github.memberActivity(targetId).then((d) => setActivity(d.activity || [])).catch(() => setActivity([]))
   }
 
   useEffect(() => {
@@ -41,8 +36,7 @@ export default function Profile() {
     try {
       await api.github.refreshMy()
       setMsg('GitHub stats refreshed.')
-      api.github.memberStats(targetId).then((d) => setGithub(d.stats)).catch(() => {})
-      api.github.memberActivity(targetId).then((d) => setActivity(d.activity || [])).catch(() => {})
+      load()
     } catch (err) {
       setError(err.message)
     } finally {
@@ -124,55 +118,6 @@ export default function Profile() {
           href={member.github_handle ? `https://github.com/${member.github_handle}` : null} />
         <DetailCard icon={Calendar} label="Joined" value={member.join_date || '—'} />
       </div>
-
-      {/* GitHub activity */}
-      {member.github_handle && (
-        <div className="card p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-text-soft">
-              <GitBranch className="h-4 w-4" /> GitHub Activity
-            </h3>
-            {member.github_handle && (
-              <a href={`https://github.com/${member.github_handle}`} target="_blank" rel="noreferrer"
-                title={`Open github.com/${member.github_handle}`}
-                className="text-xs text-accent hover:underline">
-                View on GitHub ↗
-              </a>
-            )}
-          </div>
-          {github && (github.repo_count > 0 || github.commit_count > 0 || github.pr_count > 0 || github.issue_count > 0) ? (
-            <>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                {[
-                  { label: 'Repositories', value: github.repo_count },
-                  { label: 'Commits', value: github.commit_count },
-                  { label: 'Pull Requests', value: github.pr_count },
-                  { label: 'Issues', value: github.issue_count },
-                  { label: 'Stars', value: github.star_count },
-                  { label: 'Day Streak', value: github.streak_days, flame: true },
-                ].map((m) => (
-                  <div key={m.label} className="rounded-lg bg-card-2 p-3">
-                    <div className="text-lg font-bold text-text">
-                      {m.flame && m.value > 0 && <Flame className="mr-1.5 inline h-4 w-4 text-amber" />}
-                      {m.value}
-                    </div>
-                    <div className="mt-1 text-[11px] leading-snug text-text-muted">{m.label}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4">
-                <GitHubHeatmap activity={activity} />
-              </div>
-            </>
-          ) : (
-            <p className="py-4 text-center text-sm text-text-muted">
-              {isMe
-                ? 'No stats yet — hit "Refresh GitHub Stats" to sync your activity.'
-                : 'No GitHub stats synced for this member yet.'}
-            </p>
-          )}
-        </div>
-      )}
 
       {/* GitHub link editor */}
       {isMe && editHandle && (

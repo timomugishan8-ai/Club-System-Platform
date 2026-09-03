@@ -47,9 +47,12 @@ router.get("/", articleController.listPublished);
 router.get("/mine", articleController.listMine);
 router.get("/:id", articleController.getById);
 
-// Create (file + cover upload)
+// Create (file + cover upload) — Members and Leaders only. The admin is a
+// neutral reviewer: they review submitted drafts but never create articles.
 router.post(
     "/",
+    loadRoleName,
+    requireRole("Member", "Leader"),
     upload.fields([{ name: "file" }, { name: "cover" }]),
     articleController.create
 );

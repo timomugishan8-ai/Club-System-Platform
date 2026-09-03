@@ -109,6 +109,36 @@ const Project = {
             ORDER BY p.start_date DESC
         `;
         db.query(sql, [memberId], callback);
+    },
+
+    getComments: (projectId, callback) => {
+        const sql = `
+            SELECT
+                pc.comment_id, pc.body, pc.created_at,
+                m.member_id, m.first_name, m.last_name, r.role_name
+            FROM project_comments pc
+            JOIN members m ON pc.member_id = m.member_id
+            JOIN roles r ON m.role_id = r.role_id
+            WHERE pc.project_id = ?
+            ORDER BY pc.created_at ASC
+        `;
+        db.query(sql, [projectId], callback);
+    },
+
+    addComment: (projectId, memberId, body, callback) => {
+        db.query(
+            "INSERT INTO project_comments (project_id, member_id, body) VALUES (?, ?, ?)",
+            [projectId, memberId, body],
+            callback
+        );
+    },
+
+    deleteComment: (commentId, memberId, callback) => {
+        db.query(
+            "DELETE FROM project_comments WHERE comment_id = ? AND member_id = ?",
+            [commentId, memberId],
+            callback
+        );
     }
 };
 

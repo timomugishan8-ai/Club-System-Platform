@@ -11,6 +11,7 @@ router.get("/me", attendanceController.getByMember);
 router.get("/me/stats", attendanceController.getMyStats);
 router.get("/meeting/:meetingId", attendanceController.getByMeeting);
 router.get("/member/:memberId", attendanceController.getByMember);
+router.get("/all", loadRoleName, requireRole("Admin", "Leader"), attendanceController.getAllRecords);
 
 router.post("/", loadRoleName, requireRole("Admin", "Leader"), attendanceController.record);
 router.post("/meeting/:meetingId/bulk", loadRoleName, requireRole("Admin", "Leader"), attendanceController.bulkRecord);

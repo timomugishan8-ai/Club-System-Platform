@@ -19,7 +19,7 @@ const TIERS = [
 const TABS = [
   { key: 'members', label: 'Members', icon: Users },
   { key: 'progress', label: 'Progress', icon: TrendingUp },
-  { key: 'projects', label: 'Projects & GitHub', icon: FolderGit2 },
+  { key: 'projects', label: 'GitHub Projects', icon: FolderGit2 },
   { key: 'attendance', label: 'Attendance', icon: CalendarCheck },
   { key: 'leaderboard', label: 'Leaderboard', icon: Trophy },
 ]
@@ -30,6 +30,7 @@ export default function AdminMembers() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
 
   useEffect(() => {
     Promise.all([
@@ -40,12 +41,30 @@ export default function AdminMembers() {
         const withTiers = lb?.leaderboard || []
         setMembers((mo.members || []).map((m) => {
           const match = withTiers.find((r) => r.member_id === m.member_id)
-          return { ...m, tier: match?.tier || 'Rookie', rank: match?.rank || null, attendance_rate: match?.attendance_rate ?? null, progress_score: match?.progress_score ?? m.total_points }
+          return {
+            ...m,
+            // Overview provides points/github/attendance/badges; leaderboard
+            // only contributes rank + tier.
+            tier: match?.tier || 'Rookie',
+            rank: match?.rank || null,
+            progress_score: match?.progress_score ?? Number(m.total_points) + Number(m.github_score || 0),
+          }
         }))
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
   }, [])
+
+  const handleRoleChange = async (memberId, role) => {
+    setNotice(''); setError('')
+    try {
+      const d = await api.admin.setRole(memberId, role)
+      setMembers((prev) => prev.map((m) => (m.member_id === memberId ? { ...m, role_name: role } : m)))
+      setNotice(d.message || `Role updated to ${role}.`)
+    } catch (e) {
+      setError(e.message)
+    }
+  }
 
   if (loading) return <Spinner className="py-20" />
   if (error) return <p className="py-10 text-center text-danger">{error}</p>
@@ -69,6 +88,9 @@ export default function AdminMembers() {
         />
       </div>
 
+      {notice && <div className="rounded-lg border border-positive/30 bg-positive-soft px-4 py-2 text-sm text-positive">{notice}</div>}
+      {error && <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-2 text-sm text-danger">{error}</div>}
+
       {/* Tabs */}
       <div className="flex flex-wrap gap-2">
         {TABS.map((t) => {
@@ -84,7 +106,7 @@ export default function AdminMembers() {
         })}
       </div>
 
-      {tab === 'members' && <MembersTab members={filtered} />}
+      {tab === 'members' && <MembersTab members={filtered} onRoleChange={handleRoleChange} />}
       {tab === 'progress' && <ProgressTab members={filtered} />}
       {tab === 'projects' && <ProjectsTab members={filtered} />}
       {tab === 'attendance' && <AttendanceTab members={filtered} />}
@@ -94,29 +116,46 @@ export default function AdminMembers() {
 }
 
 /* ---------- Members (profiles) ---------- */
-function MembersTab({ members }) {
+function MembersTab({ members, onRoleChange }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {members.map((m) => (
-        <Link key={m.member_id} to={`/profile/${m.member_id}`} className="card p-5 transition-shadow hover:shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-card-2 text-base font-bold text-accent">
-              {m.avatar_url
-                ? <img src={m.avatar_url} alt="" className="h-full w-full object-cover" />
-                : `${m.first_name?.[0]}${m.last_name?.[0]}`}
+        <div key={m.member_id} className="card p-5">
+          <Link to={`/profile/${m.member_id}`} className="block transition-shadow hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-card-2 text-base font-bold text-accent">
+                {m.avatar_url
+                  ? <img src={m.avatar_url} alt="" className="h-full w-full object-cover" />
+                  : `${m.first_name?.[0]}${m.last_name?.[0]}`}
+              </div>
+              <div className="min-w-0">
+                <div className="truncate font-semibold text-text">{m.first_name} {m.last_name}</div>
+                <div className="text-xs text-text-muted">{m.role_name} · {m.committee}</div>
+              </div>
             </div>
-            <div className="min-w-0">
-              <div className="truncate font-semibold text-text">{m.first_name} {m.last_name}</div>
-              <div className="text-xs text-text-muted">{m.role_name} · {m.committee}</div>
+            <div className="mt-4 space-y-1.5 text-sm">
+              <div className="flex items-center gap-2 text-text-muted"><Mail className="h-3.5 w-3.5" /> <span className="truncate">{m.email}</span></div>
+              <div className="flex items-center gap-2 text-text-muted"><Phone className="h-3.5 w-3.5" /> {m.phone || '—'}</div>
+              <div className="flex items-center gap-2 text-text-muted"><BookOpen className="h-3.5 w-3.5" /> {m.course || '—'} {m.year_of_study ? `· Year ${m.year_of_study}` : ''}</div>
+              <div className="flex items-center gap-2 text-text-muted"><GitBranch className="h-3.5 w-3.5" /> {m.github_handle || 'Not linked'}</div>
             </div>
+          </Link>
+          {/* Role management (Admin only) — promote Member <-> Leader */}
+          <div className="mt-4 flex items-center gap-2 border-t border-border pt-3">
+            <span className="text-xs text-text-muted">Role:</span>
+            <select
+              value={m.role_name === 'Leader' ? 'Leader' : 'Member'}
+              onChange={(e) => onRoleChange(m.member_id, e.target.value)}
+              disabled={m.role_name === 'Admin'}
+              title={m.role_name === 'Admin' ? 'Admin role cannot be changed' : 'Promote or demote this member'}
+              className="flex-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs text-text focus:border-accent focus:outline-none disabled:opacity-50"
+            >
+              {m.role_name === 'Admin' && <option>Admin</option>}
+              <option>Member</option>
+              <option>Leader</option>
+            </select>
           </div>
-          <div className="mt-4 space-y-1.5 text-sm">
-            <div className="flex items-center gap-2 text-text-muted"><Mail className="h-3.5 w-3.5" /> <span className="truncate">{m.email}</span></div>
-            <div className="flex items-center gap-2 text-text-muted"><Phone className="h-3.5 w-3.5" /> {m.phone || '—'}</div>
-            <div className="flex items-center gap-2 text-text-muted"><BookOpen className="h-3.5 w-3.5" /> {m.course || '—'} {m.year_of_study ? `· Year ${m.year_of_study}` : ''}</div>
-            <div className="flex items-center gap-2 text-text-muted"><GitBranch className="h-3.5 w-3.5" /> {m.github_handle || 'Not linked'}</div>
-          </div>
-        </Link>
+        </div>
       ))}
       {members.length === 0 && <p className="col-span-full py-10 text-center text-text-muted">No members found.</p>}
     </div>
@@ -158,7 +197,7 @@ function ProgressTab({ members }) {
   )
 }
 
-/* ---------- Projects & GitHub per member ---------- */
+/* ---------- GitHub Projects per member ---------- */
 function ProjectsTab({ members }) {
   return (
     <div className="space-y-3">
@@ -181,7 +220,7 @@ function ProjectsTab({ members }) {
           </div>
           <div className="grid grid-cols-4 gap-2 text-center sm:grid-cols-5">
             <Mini label="Commits" value={m.commit_count} />
-            <Mini label="PRs" value={m.pull_requests ?? m.pr_count} />
+            <Mini label="PRs" value={m.pr_count} />
             <Mini label="Issues" value={m.issue_count} />
             <Mini label="Repos" value={m.repo_count} />
             <Mini label="Stars" value={m.star_count} />

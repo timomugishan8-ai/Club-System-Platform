@@ -59,28 +59,31 @@ export default function Analytics() {
         {/* Tier distribution donut */}
         <div className="card p-5">
           <h3 className="mb-4 text-sm font-semibold text-text-soft">Tier Distribution</h3>
-          <div className="flex items-center gap-6">
-            <DonutChart
-              data={[
-                { label: 'Gold', value: data.tier_distribution?.Gold || 0, color: '#FFC53A' },
-                { label: 'Silver', value: data.tier_distribution?.Silver || 0, color: '#8A88A6' },
-                { label: 'Bronze', value: data.tier_distribution?.Bronze || 0, color: '#B45309' },
-              ]}
-            />
-            <div className="space-y-2">
-              {[
-                { label: 'Gold', value: data.tier_distribution?.Gold || 0, color: '#FFC53A' },
-                { label: 'Silver', value: data.tier_distribution?.Silver || 0, color: '#8A88A6' },
-                { label: 'Bronze', value: data.tier_distribution?.Bronze || 0, color: '#B45309' },
-              ].map((d) => (
-                <div key={d.label} className="flex items-center gap-2 text-sm">
-                  <div className="h-3 w-3 rounded-full" style={{ background: d.color }} />
-                  <span className="text-text-soft">{d.label}</span>
-                  <span className="font-semibold text-text">{d.value}</span>
+          {(() => {
+            const td = data.tier_distribution || {}
+            const tiers = [
+              { label: 'Diamond', value: td.Diamond || 0, color: '#06B6D4' },
+              { label: 'Gold', value: td.Gold || 0, color: '#FFC53A' },
+              { label: 'Silver', value: td.Silver || 0, color: '#9CA3AF' },
+              { label: 'Bronze', value: td.Bronze || 0, color: '#B45309' },
+              { label: 'Rising Star', value: td['Rising Star'] || 0, color: '#14B8A6' },
+              { label: 'Rookie', value: td.Rookie || 0, color: '#6B7280' },
+            ]
+            return (
+              <div className="flex items-center gap-6">
+                <DonutChart data={tiers} />
+                <div className="space-y-2">
+                  {tiers.map((d) => (
+                    <div key={d.label} className="flex items-center gap-2 text-sm">
+                      <div className="h-3 w-3 rounded-full" style={{ background: d.color }} />
+                      <span className="text-text-soft">{d.label}</span>
+                      <span className="font-semibold text-text">{d.value}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            )
+          })()}
         </div>
 
         {/* Attendance trend bar chart */}

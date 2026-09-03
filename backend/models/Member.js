@@ -134,6 +134,14 @@ const Member = {
         );
     },
 
+    updateRole: (memberId, roleId, callback) => {
+        db.query(
+            "UPDATE members SET role_id = ? WHERE member_id = ?",
+            [roleId, memberId],
+            callback
+        );
+    },
+
     deleteById: (memberId, callback) => {
         db.query("DELETE FROM members WHERE member_id = ?", [memberId], callback);
     }

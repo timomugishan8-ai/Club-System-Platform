@@ -3,14 +3,16 @@ import { Link } from 'react-router-dom'
 import {
   Users, GraduationCap, ClipboardCheck,   Trophy, ChevronRight,
   GitBranch, Calendar, Megaphone, Award, Flame, Lock,
+
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
 import GitHubHeatmap from '../components/GitHubHeatmap'
+import AdminDashboard from './AdminDashboard'
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const [dash, setDash] = useState(null)
   const [progress, setProgress] = useState(null)
   const [github, setGithub] = useState(null)
@@ -22,6 +24,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (isAdmin) return // admin dashboard loads its own data
     Promise.all([
       api.leaderboard.myDashboard().catch(() => null),
       api.leaderboard.myProgress().catch(() => null),
@@ -42,7 +45,9 @@ export default function Dashboard() {
       setHandle(me?.member?.github_handle || '')
       setLoading(false)
     })
-  }, [])
+  }, [isAdmin])
+
+  if (isAdmin) return <AdminDashboard />
 
   if (loading) return <Spinner className="py-20" />
 

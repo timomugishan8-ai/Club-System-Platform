@@ -13,7 +13,7 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/profile', label: 'My Profile', icon: User },
   { to: '/progress', label: 'My Progress', icon: TrendingUp },
-  { to: '/projects', label: 'Projects', icon: FolderGit2 },
+  { to: '/projects', label: 'GitHub Projects', icon: FolderGit2 },
   { to: '/attendance', label: 'Attendance', icon: CalendarCheck },
   { to: '/meetings', label: 'Meetings', icon: CalendarDays },
   { to: '/leaderboard', label: 'Leaderboard', icon: Trophy },
@@ -76,9 +76,10 @@ export default function Sidebar({ onCollapse }) {
 
   // Merge all sections into one scrollable list. Admins get the admin items
   // appended after the main nav; non-admin leaders get leader items instead.
-  // Settings always sits at the very end of the list.
+  // Settings always sits at the very end of the list. The admin is a neutral
+  // oversight account: its "progress" entry shows chapter members' progress.
   const items = isAdmin
-    ? [...navItems, ...adminItems, settingsItem]
+    ? [...navItems.map((i) => (i.to === '/progress' ? { ...i, label: 'Chapter Member Progress' } : i)), ...adminItems, settingsItem]
     : isLeader
       ? [...navItems, ...leaderItems, settingsItem]
       : [...navItems, settingsItem]

@@ -20,15 +20,19 @@ const sql = `
         COALESCE(r.role_name, 'Member') AS role_name,
         COALESCE(c.committee_name, 'Unassigned') AS committee,
         COALESCE(SUM(pts.points), 0) AS total_points,
-        COALESCE(MAX(gc.commit_count), 0) AS commits,
-        COALESCE(MAX(gc.pr_count), 0) AS prs,
-        COALESCE(MAX(gc.issue_count), 0) AS issues,
-        COALESCE(MAX(gc.repo_count), 0) AS repos,
-        COALESCE(MAX(gc.star_count), 0) AS stars,
+        COALESCE(MAX(gc.commit_count), 0) AS commit_count,
+        COALESCE(MAX(gc.pr_count), 0) AS pr_count,
+        COALESCE(MAX(gc.issue_count), 0) AS issue_count,
+        COALESCE(MAX(gc.repo_count), 0) AS repo_count,
+        COALESCE(MAX(gc.star_count), 0) AS star_count,
+        COALESCE(MAX(gc.fetched_at), NULL) AS github_fetched_at,
         COALESCE(MAX(gc.commit_count), 0) + COALESCE(MAX(gc.pr_count), 0) + COALESCE(MAX(gc.issue_count), 0)
             + COALESCE(MAX(gc.repo_count), 0) + COALESCE(MAX(gc.star_count), 0) AS github_score,
         COUNT(DISTINCT a.attendance_id) AS meetings_attended,
         COALESCE(ROUND(SUM(a.status IN ('Present', 'Late')) / NULLIF(COUNT(DISTINCT a.attendance_id), 0) * 100, 1), 0) AS attendance_rate,
+        SUM(a.status = 'Present') AS present_count,
+        SUM(a.status = 'Late') AS late_count,
+        SUM(a.status = 'Absent') AS absent_count,
         (SELECT COUNT(*) FROM member_badges mb WHERE mb.member_id = m.member_id) AS badges_earned
     FROM members m
     LEFT JOIN roles r ON m.role_id = r.role_id

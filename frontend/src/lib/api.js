@@ -99,6 +99,7 @@ export const api = {
   attendance: {
     mine: () => request('/attendance/me'),
     myStats: () => request('/attendance/me/stats'),
+    all: () => request('/attendance/all'),
     byMeeting: (id) => request(`/attendance/meeting/${id}`),
     byMember: (id) => request(`/attendance/member/${id}`),
     record: (body) => request('/attendance', { method: 'POST', body }),
@@ -136,8 +137,13 @@ export const api = {
   projects: {
     list: () => request('/projects'),
     mine: () => request('/projects/mine'),
+    byMember: (id) => request(`/projects/member/${id}`),
+    overviewByMember: () => request('/projects/overview-by-member'),
     get: (id) => request(`/projects/${id}`),
     members: (id) => request(`/projects/${id}/members`),
+    comments: (id) => request(`/projects/${id}/comments`),
+    addComment: (id, body) => request(`/projects/${id}/comments`, { method: 'POST', body: { body } }),
+    deleteComment: (id, commentId) => request(`/projects/${id}/comments/${commentId}`, { method: 'DELETE' }),
     create: (body) => request('/projects', { method: 'POST', body }),
     update: (id, body) => request(`/projects/${id}`, { method: 'PUT', body }),
     remove: (id) => request(`/projects/${id}`, { method: 'DELETE' }),
@@ -181,6 +187,14 @@ export const api = {
     all: () => request('/leaderboard'),
     myProgress: () => request('/leaderboard/me/progress'),
     myDashboard: () => request('/leaderboard/me/dashboard'),
+    adminDashboard: () => request('/leaderboard/admin/dashboard'),
+    memberProgress: (id) => request(`/leaderboard/member/${id}/progress`),
+  },
+
+  // System settings (Admin only)
+  systemSettings: {
+    get: () => request('/system-settings'),
+    update: (body) => request('/system-settings', { method: 'PUT', body }),
   },
 
   // Notifications
@@ -192,11 +206,13 @@ export const api = {
   },
 
   // Admin
+  // Admin
   admin: {
     pending: () => request('/admin/pending'),
     approve: (id) => request(`/admin/pending/${id}/approve`, { method: 'POST' }),
     reject: (id) => request(`/admin/pending/${id}/reject`, { method: 'POST' }),
     membersOverview: () => request('/admin/members-overview'),
+    setRole: (id, role) => request(`/admin/members/${id}/role`, { method: 'PUT', body: { role } }),
   },
 
   // Analytics (Admin)

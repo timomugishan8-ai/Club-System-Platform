@@ -96,6 +96,21 @@ describe("pointService", () => {
                 done();
             });
         });
+
+        test("skips admins entirely (neutral account)", (done) => {
+            mockDb.memberIsAdmin = true;
+            const pointService = loadService();
+            pointService.awardAttendancePoints(1, 1, "Present", (err) => {
+                expect(err).toBeNull();
+                expect(mockDb.insertedParticipation).toHaveLength(0);
+                pointService.awardGitHubPoints(1, { pr_count: 5 }, (err2) => {
+                    expect(err2).toBeNull();
+                    expect(mockDb.insertedParticipation).toHaveLength(0);
+                    expect(badgeService.evaluateBadges).not.toHaveBeenCalled();
+                    done();
+                });
+            });
+        });
     });
 
     describe("awardAttendancePointsBulk", () => {

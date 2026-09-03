@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
-import { User, Lock, GitBranch, Bell, Palette, LogOut } from 'lucide-react'
+import { User, Lock, GitBranch, Bell, Palette, LogOut, SlidersHorizontal } from 'lucide-react'
 
 export default function Settings() {
-  const { logout, refreshUser } = useAuth()
+  const { logout, refreshUser, isAdmin } = useAuth()
   const { theme, setTheme } = useTheme()
+  const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
   const [pwd, setPwd] = useState({ current_password: '', new_password: '' })
+  const [sysSettings, setSysSettings] = useState(null)
   const [msg, setMsg] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -31,7 +34,10 @@ export default function Settings() {
       })
       setLoading(false)
     })
-  }, [])
+    if (isAdmin) {
+      api.systemSettings.get().then((d) => setSysSettings(d.settings || {})).catch(() => setSysSettings({}))
+    }
+  }, [isAdmin])
 
   // keep local theme in sync with the saved member preference on load
   useEffect(() => {
@@ -69,12 +75,54 @@ export default function Settings() {
     navigate('/login')
   }
 
+  const saveSysSettings = async (e) => {
+    e.preventDefault()
+    setError(''); setMsg('')
+    try {
+      await api.systemSettings.update(sysSettings)
+      setMsg('System settings updated.')
+    } catch (err) { setError(err.message) }
+  }
+
   return (
     <div className="max-w-3xl space-y-5">
-      <h1 className="text-xl font-bold text-text">Settings</h1>
+      <h1 className="text-xl font-bold text-text">
+        {isAdmin ? 'Admin Settings' : 'Settings'}
+      </h1>
 
       {msg && <div className="rounded-lg border border-positive/30 bg-positive-soft px-4 py-2 text-sm text-positive">{msg}</div>}
       {error && <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-2 text-sm text-danger">{error}</div>}
+
+      {/* System settings — Admin only */}
+      {isAdmin && sysSettings && (
+        <Section icon={SlidersHorizontal} title="System Settings (Admin)">
+          <form onSubmit={saveSysSettings} className="space-y-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {[
+                ['tier_rookie_min', 'Rookie min score'],
+                ['tier_rising_star_min', 'Rising Star min score'],
+                ['tier_bronze_min', 'Bronze min score'],
+                ['tier_silver_min', 'Silver min score'],
+                ['tier_gold_min', 'Gold min score'],
+                ['tier_diamond_min', 'Diamond min score'],
+                ['github_weight', 'GitHub weight'],
+                ['attendance_weight', 'Attendance weight'],
+              ].map(([key, label]) => (
+                <Field key={key} label={key.endsWith('_weight') ? label : label} type="number" step="any"
+                  value={sysSettings[key] ?? ''}
+                  onChange={(v) => setSysSettings({ ...sysSettings, [key]: v })} />
+              ))}
+            </div>
+            <p className="text-xs text-text-muted">
+              Tier thresholds and scoring weights apply across leaderboards, progress pages, and analytics.
+            </p>
+            <button type="submit"
+              className="rounded-lg bg-gradient-accent px-4 py-2 text-sm font-semibold text-white">
+              Save System Settings
+            </button>
+          </form>
+        </Section>
+      )}
 
       {/* Profile */}
       <Section icon={User} title="Profile">
@@ -201,11 +249,11 @@ function Section({ icon: Icon, title, children }) {
   )
 }
 
-function Field({ label, value, onChange, type = 'text', placeholder = '' }) {
+function Field({ label, value, onChange, type = 'text', step, placeholder = '' }) {
   return (
     <label className="block">
       <span className="mb-1.5 block text-xs text-text-muted">{label}</span>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+      <input type={type} step={step} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
     </label>
   )

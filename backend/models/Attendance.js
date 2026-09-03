@@ -101,6 +101,21 @@ const Attendance = {
             WHERE member_id = ?
         `;
         db.query(sql, [memberId], callback);
+    },
+
+    findAllRecords: (callback) => {
+        const sql = `
+            SELECT
+                a.attendance_id, a.status, a.check_in_time, a.remarks,
+                m.member_id, m.first_name, m.last_name, m.avatar_url,
+                mt.meeting_id, mt.title, mt.meeting_date
+            FROM attendance a
+            JOIN members m ON a.member_id = m.member_id
+            JOIN meetings mt ON a.meeting_id = mt.meeting_id
+            ORDER BY mt.meeting_date DESC, m.first_name ASC
+            LIMIT 500
+        `;
+        db.query(sql, callback);
     }
 };
 

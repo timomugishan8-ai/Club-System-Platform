@@ -63,6 +63,14 @@ const getMyStats = (req, res) => {
     });
 };
 
+// Admin/Leader: full attendance log across all members (newest first, capped)
+const getAllRecords = (req, res) => {
+    Attendance.findAllRecords((err, results) => {
+        if (err) return res.status(500).json({ message: "Failed to load attendance." });
+        res.json({ attendance: results });
+    });
+};
+
 const update = (req, res) => {
     const { status, check_in_time, remarks } = req.body;
     Attendance.update(req.params.id, { status, check_in_time, remarks }, (err) => {
@@ -80,4 +88,4 @@ const remove = (req, res) => {
     });
 };
 
-module.exports = { record, bulkRecord, getByMeeting, getByMember, getMyStats, update, remove };
+module.exports = { record, bulkRecord, getByMeeting, getByMember, getMyStats, getAllRecords, update, remove };

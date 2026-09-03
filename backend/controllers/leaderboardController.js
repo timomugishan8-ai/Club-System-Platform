@@ -104,8 +104,15 @@ const getLeaderboard = (req, res) => {
 };
 
 const getMyProgress = (req, res) => {
-    const memberId = req.user.id;
+    buildMemberProgress(req.user.id, (err, status, payload) => {
+        if (err) return res.status(500).json({ message: "Failed to load progress." });
+        if (status === 404) return res.status(404).json({ message: "Member not found." });
+        res.json({ progress: payload });
+    });
+};
 
+// Shared builder so admins can fetch any member's progress detail.
+const buildMemberProgress = (memberId, callback) => {
     const sql = `
         SELECT
             m.member_id, m.first_name, m.last_name,
@@ -128,8 +135,8 @@ const getMyProgress = (req, res) => {
     `;
 
     db.query(sql, [memberId], (err, results) => {
-        if (err) return res.status(500).json({ message: "Failed to load progress." });
-        if (results.length === 0) return res.status(404).json({ message: "Member not found." });
+        if (err) return callback(err);
+        if (results.length === 0) return callback(null, 404);
 
         const row = results[0];
         const settingKeys = [
@@ -140,7 +147,7 @@ const getMyProgress = (req, res) => {
             `SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN (${settingKeys.map(() => "?").join(",")})`,
             settingKeys,
             (err, settings) => {
-                if (err) return res.status(500).json({ message: "Failed to load tier config." });
+                if (err) return callback(err);
 
                 const cfg = {};
                 settings.forEach((s) => { cfg[s.setting_key] = s.setting_value; });
@@ -161,6 +168,7 @@ const getMyProgress = (req, res) => {
                     : 0;
 
                 PointAdjustment.getMemberPillarPoints(memberId, (err, pillarRows) => {
+                    if (err) return callback(err);
                     const pillarPoints = {};
                     [
                         "Attendance & Participation",
@@ -173,21 +181,28 @@ const getMyProgress = (req, res) => {
                         pillarPoints[p.pillar] = p.pillar_points;
                     });
 
-                    res.json({
-                        progress: {
-                            ...row,
-                            github_points: githubPoints,
-                            attendance_points: attendancePoints,
-                            progress_score: progressScore,
-                            tier: tierName,
-                            next_tier: nextTier,
-                            points_to_next: pointsToNext,
-                            pillar_points: pillarPoints
-                        }
+                    callback(null, 200, {
+                        ...row,
+                        github_points: githubPoints,
+                        attendance_points: attendancePoints,
+                        progress_score: progressScore,
+                        tier: tierName,
+                        next_tier: nextTier,
+                        points_to_next: pointsToNext,
+                        pillar_points: pillarPoints
                     });
                 });
             }
         );
+    });
+};
+
+// Admin/Leader: any member's full progress detail
+const getMemberProgress = (req, res) => {
+    buildMemberProgress(req.params.memberId, (err, status, payload) => {
+        if (err) return res.status(500).json({ message: "Failed to load progress." });
+        if (status === 404) return res.status(404).json({ message: "Member not found." });
+        res.json({ progress: payload });
     });
 };
 
@@ -243,4 +258,118 @@ const getDashboardStats = (req, res) => {
     });
 };
 
-module.exports = { getLeaderboard, getMyProgress, getDashboardStats };
+// Admin dashboard: neutral chapter-oversight overview. No personal stats,
+// points, GitHub, or ranking — the admin account doesn't participate.
+const getAdminDashboard = (req, res) => {
+    const stats = {};
+    let pending = 6;
+    const done = () => {
+        pending--;
+        if (pending === 0) res.json({ dashboard: stats });
+    };
+
+    // 1. Chapter health counts
+    db.query(`
+        SELECT
+            (SELECT COUNT(*) FROM members WHERE approval_status = 'Approved' AND is_active = TRUE AND role_id != 1) AS approved_members,
+            (SELECT COUNT(*) FROM members WHERE approval_status = 'Pending') AS pending_members,
+            (SELECT COUNT(*) FROM members WHERE approval_status = 'Rejected') AS rejected_members,
+            (SELECT COUNT(*) FROM members WHERE approval_status = 'Approved' AND is_active = TRUE AND role_id != 1 AND github_handle IS NOT NULL AND github_handle != '') AS members_with_github,
+            (SELECT COUNT(*) FROM meetings) AS total_meetings,
+            (SELECT COUNT(*) FROM projects WHERE status IN ('Planning', 'In Progress')) AS active_projects,
+            (SELECT COUNT(*) FROM projects WHERE status = 'Completed') AS completed_projects,
+            (SELECT COUNT(*) FROM events WHERE event_date >= CURDATE()) AS upcoming_events_count,
+            (SELECT COALESCE(SUM(points), 0) FROM participation) AS total_points_awarded
+    `, (err, r) => {
+        stats.chapter = (r && r[0]) || {};
+        done();
+    });
+
+    // 2. Attendance overview (all-time per status)
+    db.query(`
+        SELECT
+            COALESCE(SUM(status = 'Present'), 0) AS present,
+            COALESCE(SUM(status = 'Late'), 0) AS late,
+            COALESCE(SUM(status = 'Absent'), 0) AS absent,
+            COALESCE(SUM(status = 'Excused'), 0) AS excused
+        FROM attendance
+    `, (err, r) => {
+        stats.attendance = (r && r[0]) || {};
+        done();
+    });
+
+    // 3. Pending approvals (top 5, oldest first)
+    db.query(`
+        SELECT member_id, first_name, last_name, email, created_at
+        FROM members WHERE approval_status = 'Pending'
+        ORDER BY created_at ASC LIMIT 5
+    `, (err, r) => {
+        stats.pending_approvals = r || [];
+        done();
+    });
+
+    // 4. GitHub coverage: linked vs refreshed
+    db.query(`
+        SELECT
+            COUNT(DISTINCT gc.member_id) AS members_synced
+        FROM github_contributions gc
+        JOIN members m ON gc.member_id = m.member_id
+        WHERE m.role_id != 1
+    `, (err, r) => {
+        stats.github_synced = (r && r[0]) ? r[0].members_synced : 0;
+        done();
+    });
+
+    // 5. Recent activity pulse (participation records, last 10)
+    db.query(`
+        SELECT p.participation_id, p.activity, p.points, p.recorded_at,
+               m.member_id, m.first_name, m.last_name
+        FROM participation p
+        JOIN members m ON p.member_id = m.member_id
+        ORDER BY p.recorded_at DESC LIMIT 10
+    `, (err, r) => {
+        stats.recent_activity = r || [];
+        done();
+    });
+
+    // 6. Tier distribution snapshot
+    db.query(`
+        SELECT
+            COALESCE(SUM(p.points), 0) AS total_points,
+            (SELECT COALESCE(SUM(commit_count + pr_count + issue_count + repo_count + star_count), 0)
+             FROM github_contributions WHERE member_id = m.member_id) AS github_score,
+            CASE
+                WHEN (SELECT COUNT(*) FROM attendance WHERE member_id = m.member_id) = 0 THEN 0
+                ELSE ROUND(
+                    (SELECT SUM(status = 'Present' OR status = 'Late')
+                     FROM attendance WHERE member_id = m.member_id)
+                    / (SELECT COUNT(*) FROM attendance WHERE member_id = m.member_id) * 100, 1)
+            END AS attendance_rate
+        FROM members m
+        LEFT JOIN participation p ON m.member_id = p.member_id
+        WHERE m.approval_status = 'Approved' AND m.is_active = TRUE AND m.role_id != 1
+        GROUP BY m.member_id
+    `, (err, r) => {
+        const scores = (r || []).map((row) => (row.total_points || 0) + (row.github_score || 0));
+        const settingKeys = TIERS.map((t) => t.key);
+        db.query(
+            `SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN (${settingKeys.map(() => "?").join(",")})`,
+            settingKeys,
+            (err, settings) => {
+                const cfg = {};
+                (settings || []).forEach((s) => { cfg[s.setting_key] = parseInt(s.setting_value, 10) || 0; });
+                stats.tier_distribution = {
+                    Diamond: scores.filter((s) => s >= (cfg.tier_diamond_min || 0)).length,
+                    Gold: scores.filter((s) => s >= (cfg.tier_gold_min || 0) && s < (cfg.tier_diamond_min || 0)).length,
+                    Silver: scores.filter((s) => s >= (cfg.tier_silver_min || 0) && s < (cfg.tier_gold_min || 0)).length,
+                    Bronze: scores.filter((s) => s >= (cfg.tier_bronze_min || 0) && s < (cfg.tier_silver_min || 0)).length,
+                    "Rising Star": scores.filter((s) => s >= (cfg.tier_rising_star_min || 0) && s < (cfg.tier_bronze_min || 0)).length,
+                    Rookie: scores.filter((s) => s < (cfg.tier_rising_star_min || 0)).length,
+                };
+                done();
+            }
+        );
+    });
+};
+
+module.exports = { getLeaderboard, getMyProgress, getMemberProgress, getDashboardStats, getAdminDashboard };

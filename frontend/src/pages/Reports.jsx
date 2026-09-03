@@ -10,18 +10,30 @@ const semesterPresets = () => {
   const now = new Date()
   const y = now.getFullYear()
   return [
-    { label: `${y} Aug – Dec (Sem 1)`, start: `${y}-08-01`, end: `${y}-12-31` },
     { label: `${y} Jan – May (Sem 2)`, start: `${y}-01-01`, end: `${y}-05-31` },
-    { label: 'Last 3 months', start: iso(new Date(y, now.getMonth() - 3, 1)), end: iso(now) },
+    { label: `${y} Aug – Dec (Sem 1)`, start: `${y}-08-01`, end: `${y}-12-31` },
+    // Prior-year semester 2 for the Aug–Dec window at the start of the year
+    { label: `${y - 1} Jan – May (Sem 2)`, start: `${y - 1}-01-01`, end: `${y - 1}-05-31` },
   ]
 }
 
 const iso = (d) => d.toISOString().slice(0, 10)
 
+// Default to the semester containing today (Jan–May or Aug–Dec)
+const currentSemester = () => {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = now.getMonth() + 1
+  if (m >= 8) return { start: `${y}-08-01`, end: `${y}-12-31` }
+  if (m <= 5) return { start: `${y}-01-01`, end: `${y}-05-31` }
+  return { start: `${y - 1}-08-01`, end: `${y - 1}-12-31` } // June–July: previous sem 1
+}
+
 export default function Reports() {
   const preset = semesterPresets()
-  const [start, setStart] = useState(preset[2].start)
-  const [end, setEnd] = useState(preset[2].end)
+  const def = currentSemester()
+  const [start, setStart] = useState(def.start)
+  const [end, setEnd] = useState(def.end)
   const [report, setReport] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -90,8 +102,12 @@ export default function Reports() {
           </label>
           <div className="flex flex-wrap gap-2">
             {preset.map((p) => (
-              <button key={p.label} onClick={() => { setStart(p.start); setEnd(iso(new Date(p.end))) }}
-                className="rounded-lg border border-border px-3 py-2 text-xs text-text-muted hover:border-accent hover:text-accent">
+              <button key={p.label} onClick={() => { setStart(p.start); setEnd(p.end) }}
+                className={`rounded-lg border px-3 py-2 text-xs ${
+                  start === p.start && end === p.end
+                    ? 'border-accent text-accent'
+                    : 'border-border text-text-muted hover:border-accent hover:text-accent'
+                }`}>
                 {p.label}
               </button>
             ))}

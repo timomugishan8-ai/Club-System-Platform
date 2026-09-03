@@ -7,6 +7,7 @@ const mockDb = {
     articleLikeCount: 0,
     existingLikePoints: 0,
     existingGitHubPoints: 0,
+    memberIsAdmin: false,
 
     reset() {
         this.insertedParticipation = [];
@@ -17,6 +18,7 @@ const mockDb = {
         this.articleLikeCount = 0;
         this.existingLikePoints = 0;
         this.existingGitHubPoints = 0;
+        this.memberIsAdmin = false;
     },
 
     query(sql, params, callback) {
@@ -70,6 +72,10 @@ const mockDb = {
 
         if (sqlLower.includes("coalesce(sum(points), 0)") && sqlLower.includes("article like")) {
             return callback(null, [{ current_points: this.existingLikePoints }]);
+        }
+
+        if (sqlLower.includes("select r.role_name from members")) {
+            return callback(null, this.memberIsAdmin ? [{ role_name: "Admin" }] : [{ role_name: "Member" }]);
         }
 
         if (sqlLower.includes("from attendance") && sqlLower.includes("join meetings")) {

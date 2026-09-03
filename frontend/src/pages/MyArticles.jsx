@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
+import { useAuth } from '../context/AuthContext'
 import {
   FileText, Plus, X, Send, Trash2, Clock, Heart, MessageCircle,
   CheckCircle, XCircle, Eye, Upload,
@@ -16,6 +17,7 @@ const statusConfig = {
 }
 
 export default function MyArticles() {
+  const { isAdmin } = useAuth()
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -80,20 +82,33 @@ export default function MyArticles() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-text">My Articles</h1>
-          <p className="text-sm text-text-muted">Upload, submit, and track your articles.</p>
+          <p className="text-sm text-text-muted">
+            {isAdmin
+              ? 'The admin account reviews submitted articles — it does not publish its own.'
+              : 'Upload, submit, and track your articles.'}
+          </p>
         </div>
         <div className="flex gap-2">
           <Link to="/articles" className="rounded-lg border border-border px-3 py-1.5 text-sm text-text-soft hover:bg-card-2">
             Browse All
           </Link>
-          <button onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 rounded-lg bg-gradient-accent px-4 py-2 text-sm font-semibold text-white">
-            <Plus className="h-4 w-4" /> Upload Article
-          </button>
+          {!isAdmin && (
+            <button onClick={() => setShowForm(true)}
+              className="flex items-center gap-2 rounded-lg bg-gradient-accent px-4 py-2 text-sm font-semibold text-white">
+              <Plus className="h-4 w-4" /> Upload Article
+            </button>
+          )}
         </div>
       </div>
 
-      {articles.length === 0 ? (
+      {isAdmin ? (
+        <div className="card p-10 text-center">
+          <FileText className="mx-auto mb-3 h-10 w-10 text-text-muted" />
+          <p className="text-sm text-text-muted">
+            As the admin, you review articles submitted by members via the Article Review queue.
+          </p>
+        </div>
+      ) : articles.length === 0 ? (
         <div className="card p-10 text-center">
           <FileText className="mx-auto mb-3 h-10 w-10 text-text-muted" />
           <p className="text-sm text-text-muted">No articles yet. Upload your first one!</p>

@@ -17,6 +17,102 @@ const getMine = (req, res) => {
     });
 };
 
+// Projects a specific member participates in (for admin member views)
+const getByMember = (req, res) => {
+    Project.findByMember(req.params.memberId, (err, results) => {
+        if (err) return res.status(500).json({ message: "Failed to load projects." });
+        res.json({ projects: results });
+    });
+};
+
+// One call: every approved member with their GitHub repos (cached) and club
+// project assignments. Powers the per-member "GitHub Projects" section
+// without N+1 requests from the frontend.
+const getOverviewByMember = (req, res) => {
+    const db = require("../config/db");
+
+    const membersSql = `
+        SELECT member_id, first_name, last_name, github_handle
+        FROM members
+        WHERE approval_status = 'Approved' AND is_active = TRUE AND role_id != 1
+        ORDER BY first_name, last_name
+    `;
+    const reposSql = `
+        SELECT member_id, github_repo_id, name, full_name, description, html_url,
+               language, star_count, fork_count, is_fork, pushed_at
+        FROM github_repositories
+        ORDER BY pushed_at DESC
+    `;
+    const assignedSql = `
+        SELECT pm.member_id, p.project_id, p.title, p.description, p.repo_url,
+               p.status, pm.role
+        FROM project_members pm
+        JOIN projects p ON pm.project_id = p.project_id
+    `;
+    const createdSql = `
+        SELECT created_by AS member_id, project_id, title, description, repo_url,
+               status, 'Creator' AS role
+        FROM projects
+    `;
+
+    db.query(membersSql, (err, members) => {
+        if (err) return res.status(500).json({ message: "Failed to load members." });
+        db.query(reposSql, (err, repos) => {
+            if (err) return res.status(500).json({ message: "Failed to load repositories." });
+            db.query(assignedSql, (err, assigned) => {
+                if (err) return res.status(500).json({ message: "Failed to load assignments." });
+                db.query(createdSql, (err, created) => {
+                    if (err) return res.status(500).json({ message: "Failed to load projects." });
+
+                    const map = {};
+                    for (const m of members || []) {
+                        map[m.member_id] = {
+                            member_id: m.member_id,
+                            first_name: m.first_name,
+                            last_name: m.last_name,
+                            github_handle: m.github_handle,
+                            repositories: [],
+                            projects: [],
+                        };
+                    }
+                    for (const r of repos || []) {
+                        if (map[r.member_id]) {
+                            map[r.member_id].repositories.push({
+                                github_repo_id: r.github_repo_id,
+                                name: r.name,
+                                full_name: r.full_name,
+                                description: r.description,
+                                html_url: r.html_url,
+                                language: r.language,
+                                star_count: r.star_count,
+                                fork_count: r.fork_count,
+                                is_fork: !!r.is_fork,
+                                pushed_at: r.pushed_at,
+                            });
+                        }
+                    }
+                    const addProject = (row, kind) => {
+                        if (!map[row.member_id]) return;
+                        map[row.member_id].projects.push({
+                            kind,
+                            project_id: row.project_id,
+                            title: row.title,
+                            description: row.description,
+                            repo_url: row.repo_url,
+                            status: row.status,
+                            role: row.role,
+                        });
+                    };
+                    (assigned || []).forEach((r) => addProject(r, r.role));
+                    (created || []).forEach((r) => addProject(r, 'Creator'));
+
+                    res.json({ members: Object.values(map) });
+                });
+            });
+        });
+    });
+};
+
 const getById = (req, res) => {
     Project.findById(req.params.id, (err, results) => {
         if (err) return res.status(500).json({ message: "Failed to load project." });
@@ -133,7 +229,40 @@ const removeMember = (req, res) => {
     });
 };
 
+// Reviewer feedback (Admin/Leader): comments to help members polish projects
+const getComments = (req, res) => {
+    Project.getComments(req.params.id, (err, results) => {
+        if (err) return res.status(500).json({ message: "Failed to load comments." });
+        res.json({ comments: results });
+    });
+};
+
+const addComment = (req, res) => {
+    const { body } = req.body;
+    if (!body || !String(body).trim()) {
+        return res.status(400).json({ message: "Comment body is required." });
+    }
+    Project.addComment(req.params.id, req.user.id, String(body).trim(), (err) => {
+        if (err) return res.status(500).json({ message: "Failed to add comment." });
+        Project.getComments(req.params.id, (err, comments) => {
+            if (err) return res.status(500).json({ message: "Failed to load comments." });
+            res.status(201).json({ message: "Comment added.", comments });
+        });
+    });
+};
+
+const deleteComment = (req, res) => {
+    Project.deleteComment(req.params.commentId, req.user.id, (err, result) => {
+        if (err) return res.status(500).json({ message: "Failed to delete comment." });
+        if (!result || result.affectedRows === 0) {
+            return res.status(404).json({ message: "Comment not found or not yours." });
+        }
+        res.json({ message: "Comment deleted." });
+    });
+};
+
 module.exports = {
-    list, getMine, getById, create, update, remove,
-    getMembers, addMember, removeMember
+    list, getMine, getByMember, getOverviewByMember, getById, create, update, remove,
+    getMembers, addMember, removeMember,
+    getComments, addComment, deleteComment
 };

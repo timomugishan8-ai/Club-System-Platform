@@ -269,10 +269,14 @@ const refreshForMember = (memberId, githubHandle) => {
 // Refresh every member that has a GitHub handle linked. Used by the nightly
 // scheduler and callable from an admin trigger. Serialized to stay under the
 // GitHub rate limit (60 req/hr unauthenticated, 5000 with a token).
+// Admins (role_id = 1) are excluded — the admin account is neutral: no
+// GitHub tracking, no points, no ranking.
 const refreshAllMembers = async ({ onResult } = {}) => {
     const members = await new Promise((resolve, reject) => {
         db.query(
-            "SELECT member_id, github_handle FROM members WHERE github_handle IS NOT NULL AND github_handle != ''",
+            `SELECT member_id, github_handle FROM members
+             WHERE github_handle IS NOT NULL AND github_handle != ''
+               AND role_id != 1`,
             (err, rows) => (err ? reject(err) : resolve(rows))
         );
     });

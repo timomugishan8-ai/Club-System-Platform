@@ -1,24 +1,29 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
-import { FolderGit2, Plus, X, GitBranch, Star, GitFork } from 'lucide-react'
+import { FolderGit2, Plus, X, GitBranch, Star, GitFork, ExternalLink, MessageSquare, Send, Trash2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 export default function Projects() {
   const { isAdmin, isLeader, user } = useAuth()
-  const canCreate = isAdmin || isLeader
-  const [projects, setProjects] = useState([])
-  const [repos, setRepos] = useState(null)
+  const canCreate = isLeader // Admin is a reviewer, not a creator
+  const canComment = isAdmin || isLeader
+  const [memberEntries, setMemberEntries] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ title: '', description: '', repo_url: '', status: 'Planning' })
+  const [openComments, setOpenComments] = useState(null) // project id
+  const [comments, setComments] = useState([])
+  const [commentText, setCommentText] = useState('')
+  const [error, setError] = useState('')
 
   const load = () => {
-    api.projects.list().then((d) => setProjects(d.projects || [])).finally(() => setLoading(false))
-    // GitHub account repos (cached at last stats refresh); null when no stats synced
-    api.github.myRepositories()
-      .then((d) => setRepos(d.repositories || []))
-      .catch(() => setRepos(null))
+    // One call returns every approved member with their GitHub repos (cached
+    // at stats refresh) and club project assignments (assigned or created).
+    api.projects.overviewByMember()
+      .then((d) => setMemberEntries(d.members || []))
+      .catch(() => setMemberEntries([]))
+      .finally(() => setLoading(false))
   }
 
   useEffect(() => { load() }, [])
@@ -40,10 +45,75 @@ export default function Projects() {
     Archived: 'bg-text-muted/20 text-text-muted',
   }
 
+  // Unified per-member items: GitHub repos + club project assignments.
+  // Own entry first, others alphabetical.
+  const entries = (memberEntries || [])
+    .map((m) => ({
+      ...m,
+      items: [
+        ...(m.repositories || []).map((r) => ({
+          kind: 'repo',
+          id: `repo-${r.github_repo_id}`,
+          title: r.name,
+          url: r.html_url,
+          language: r.language,
+          star_count: r.star_count,
+          fork_count: r.fork_count,
+          is_fork: !!r.is_fork,
+          pushed_at: r.pushed_at,
+        })),
+        ...(m.projects || []).map((p) => ({
+          kind: 'project',
+          id: `p-${p.project_id}`,
+          project_id: p.project_id,
+          title: p.title,
+          url: p.repo_url || null,
+          status: p.status,
+          role: p.role,
+          description: p.description,
+        })),
+      ],
+    }))
+    .sort((a, b) => {
+      if (a.member_id === user?.member_id) return -1
+      if (b.member_id === user?.member_id) return 1
+      return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)
+    })
+
+  const toggleComments = (projectId) => {
+    if (openComments === projectId) { setOpenComments(null); setComments([]); return }
+    setOpenComments(projectId)
+    setComments([])
+    api.projects.comments(projectId).then((d) => setComments(d.comments || [])).catch(() => setComments([]))
+  }
+
+  const submitComment = async (projectId) => {
+    if (!commentText.trim()) return
+    try {
+      const d = await api.projects.addComment(projectId, commentText.trim())
+      setComments(d.comments || [])
+      setCommentText('')
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const removeComment = async (projectId, commentId) => {
+    try {
+      await api.projects.deleteComment(projectId, commentId)
+      setComments((c) => c.filter((x) => x.comment_id !== commentId))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   return (
     <div className="space-y-5">
+      {error && (
+        <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-2 text-sm text-danger">{error}</div>
+      )}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-text">Projects</h1>
+        <h1 className="text-xl font-bold text-text">GitHub Projects</h1>
         {canCreate && (
           <button onClick={() => setShowForm(true)}
             className="flex items-center gap-2 rounded-lg bg-gradient-accent px-4 py-2 text-sm font-semibold text-white">
@@ -52,82 +122,136 @@ export default function Projects() {
         )}
       </div>
 
-      {projects.length === 0 ? (
-        <p className="py-10 text-center text-text-muted">No projects yet.</p>
+      {/* GitHub Projects by each member (repos + club assignments merged) */}
+      {entries.length === 0 ? (
+        <p className="py-10 text-center text-text-muted">
+          No GitHub projects yet — members' repositories appear here once they link their account and refresh stats.
+        </p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((p) => (
-            <div key={p.project_id} className="card p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-2/20">
-                  <FolderGit2 className="h-5 w-5 text-accent-2" />
+        <div className="space-y-3">
+          {entries.map((m) => (
+            <div key={m.member_id} className="card p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card-2 text-sm font-semibold text-accent">
+                    {`${m.first_name} ${m.last_name}`.split(' ').map((s) => s[0]).slice(0, 2).join('')}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-text">{m.first_name} {m.last_name}</div>
+                    <div className="text-xs text-text-muted">
+                      {m.items.length} item{m.items.length !== 1 ? 's' : ''}
+                      {m.github_handle && <> · <a href={`https://github.com/${m.github_handle}`} target="_blank" rel="noreferrer"
+                        className="text-accent hover:underline">@{m.github_handle}</a></>}
+                    </div>
+                  </div>
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-xs ${statusColors[p.status] || statusColors.Planning}`}>
-                  {p.status}
-                </span>
               </div>
-              <h3 className="font-semibold text-text">{p.title}</h3>
-              <p className="mt-1 text-sm text-text-muted line-clamp-2">{p.description || 'No description.'}</p>
-              {p.repo_url && (
-                <a href={p.repo_url} target="_blank" rel="noreferrer"
-                  className="mt-3 inline-block text-xs text-accent hover:underline">
-                  View Repository ↗
-                </a>
-              )}
+              <div className="mt-3 grid grid-cols-1 gap-2 border-t border-border pt-3 sm:grid-cols-2 lg:grid-cols-3">
+                {m.items.map((item) => (
+                  <div key={item.id}
+                    className="rounded-lg bg-card-2 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          {item.kind === 'repo'
+                            ? <GitBranch className="h-3.5 w-3.5 shrink-0 text-accent" />
+                            : <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-accent-2" />}
+                          {item.url ? (
+                            <a href={item.url} target="_blank" rel="noreferrer"
+                              title={`Open ${item.title}`}
+                              className="truncate text-sm font-medium text-accent hover:underline">
+                              {item.title}
+                            </a>
+                          ) : (
+                            <span className="truncate text-sm font-medium text-text">{item.title}</span>
+                          )}
+                        </div>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-text-muted">
+                          <span className={`rounded-full px-1.5 py-0.5 ${item.kind === 'repo' ? 'bg-accent-2/20 text-accent-2' : (statusColors[item.status] || statusColors.Planning)}`}>
+                            {item.kind === 'repo' ? (item.is_fork ? 'Fork' : 'Repo') : item.status}
+                          </span>
+                          {item.language && (
+                            <span className="flex items-center gap-1">
+                              <span className="h-2 w-2 rounded-full bg-accent-3" /> {item.language}
+                            </span>
+                          )}
+                          {item.kind === 'repo' && (
+                            <span className="flex items-center gap-1"><Star className="h-3 w-3 text-amber" /> {item.star_count}</span>
+                          )}
+                          {item.kind === 'repo' && (
+                            <span className="flex items-center gap-1"><GitFork className="h-3 w-3" /> {item.fork_count}</span>
+                          )}
+                          {item.kind === 'repo' && item.pushed_at && (
+                            <span>· pushed {new Date(item.pushed_at).toLocaleDateString()}</span>
+                          )}
+                          {item.kind === 'project' && item.url && (
+                            <a href={item.url} target="_blank" rel="noreferrer" className="flex items-center gap-0.5 text-accent hover:underline">
+                              repo <ExternalLink className="h-2.5 w-2.5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      {/* Reviewer comments toggle (club projects only) */}
+                      {item.kind === 'project' && canComment && (
+                        <button
+                          onClick={() => toggleComments(item.project_id)}
+                          title="View / write feedback"
+                          className={`shrink-0 rounded-lg p-1.5 ${
+                            openComments === item.project_id ? 'bg-accent/20 text-accent' : 'text-text-muted hover:text-accent'
+                          }`}
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Comment thread */}
+                    {item.kind === 'project' && canComment && openComments === item.project_id && (
+                      <div className="mt-3 space-y-2 border-t border-border pt-3">
+                        {comments.map((c) => (
+                          <div key={c.comment_id} className="rounded-lg bg-card p-2.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0 text-xs">
+                                <span className="font-semibold text-text-soft">
+                                  {c.first_name} {c.last_name}
+                                </span>
+                                {c.role_name && <span className="text-text-muted"> · {c.role_name}</span>}
+                                <span className="text-text-muted"> · {String(c.created_at).slice(0, 10)}</span>
+                              </div>
+                              {String(c.member_id) === String(user?.member_id) && (
+                                <button onClick={() => removeComment(item.project_id, c.comment_id)}
+                                  title="Delete comment"
+                                  className="shrink-0 rounded p-1 text-text-muted hover:text-danger">
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                            <p className="mt-1 text-sm text-text">{c.body}</p>
+                          </div>
+                        ))}
+                        {comments.length === 0 && (
+                          <p className="text-xs text-text-muted">No feedback yet — add suggestions to help polish this project.</p>
+                        )}
+                        <div className="flex gap-2">
+                          <input value={commentText}
+                            onChange={(e) => setCommentText(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') submitComment(item.project_id) }}
+                            placeholder="Write feedback for the member…"
+                            className="flex-1 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-text focus:border-accent focus:outline-none" />
+                          <button onClick={() => submitComment(item.project_id)}
+                            className="rounded-lg bg-gradient-accent px-3 py-1.5 text-sm font-semibold text-white">
+                            <Send className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
       )}
-
-      {/* GitHub account repositories */}
-      <div className="pt-2">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-text">
-          <GitBranch className="h-5 w-5" /> GitHub Repositories
-        </h2>
-        {repos === null ? (
-          <p className="py-6 text-center text-sm text-text-muted">
-            Link your GitHub account and refresh your stats to see your repositories here.
-          </p>
-        ) : repos.length === 0 ? (
-          <p className="py-6 text-center text-sm text-text-muted">
-            No public repositories on your GitHub account yet.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {repos.map((r) => (
-              <div key={r.github_repo_id} className="card flex flex-col p-5">
-                <div className="mb-3 flex items-start justify-between gap-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-card-2">
-                    <GitBranch className="h-5 w-5 text-text-soft" />
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-text-muted">
-                    <span className="flex items-center gap-1"><Star className="h-3.5 w-3.5 text-amber" /> {r.star_count}</span>
-                    <span className="flex items-center gap-1"><GitFork className="h-3.5 w-3.5" /> {r.fork_count}</span>
-                  </div>
-                </div>
-                <a href={r.html_url} target="_blank" rel="noreferrer"
-                  title={`Open github.com/${r.full_name || r.name}`}
-                  className="truncate font-semibold text-accent hover:underline">
-                  {r.name}
-                </a>
-                <p className="mt-1 line-clamp-2 flex-1 text-sm text-text-muted">
-                  {r.description || 'No description.'}
-                </p>
-                <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-text-muted">
-                  <span className="flex items-center gap-1.5">
-                    {r.language && (
-                      <>
-                        <span className="h-2.5 w-2.5 rounded-full bg-accent-3" /> {r.language}
-                      </>
-                    )}
-                  </span>
-                  <span>{r.is_fork ? 'Fork' : 'Repo'}{r.pushed_at ? ` · pushed ${new Date(r.pushed_at).toLocaleDateString()}` : ''}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
       {showForm && (
         <Modal title="New Project" onClose={() => setShowForm(false)}>

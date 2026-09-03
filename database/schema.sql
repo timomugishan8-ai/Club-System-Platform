@@ -242,6 +242,22 @@ CREATE TABLE project_members (
     UNIQUE (project_id, member_id)
 );
 
+-- Reviewer feedback on projects (admin/leader guidance for members)
+CREATE TABLE project_comments (
+    comment_id  INT AUTO_INCREMENT PRIMARY KEY,
+    project_id  INT NOT NULL,
+    member_id   INT NOT NULL,
+    body        TEXT NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (project_id)
+        REFERENCES projects(project_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (member_id)
+        REFERENCES members(member_id)
+        ON DELETE CASCADE
+);
+
 -- -------------------------------------------
 -- Announcements (Admin-only posts)
 -- -------------------------------------------

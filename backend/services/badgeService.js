@@ -157,48 +157,67 @@ const RULES = {
     }
 };
 
+const isAdminMember = (memberId, callback) => {
+    db.query(
+        `SELECT r.role_name FROM members m
+         JOIN roles r ON m.role_id = r.role_id
+         WHERE m.member_id = ?`,
+        [memberId],
+        (err, rows) => {
+            if (err) return callback(err);
+            callback(null, rows[0]?.role_name === "Admin");
+        }
+    );
+};
+
 const badgeService = {
     evaluateBadges: (memberId, callback) => {
-        Badge.findAll((err, badges) => {
+        // The admin account is neutral: never earns badges.
+        isAdminMember(memberId, (err, isAdmin) => {
             if (err) return callback(err);
+            if (isAdmin) return callback(null);
 
-            let pending = badges.length;
-            if (pending === 0) return callback(null);
+            Badge.findAll((err, badges) => {
+                if (err) return callback(err);
 
-            let hadError = false;
-            badges.forEach((badge) => {
-                const rule = RULES[badge.rule_key];
-                if (!rule) {
-                    pending--;
-                    if (pending === 0 && !hadError) callback(null);
-                    return;
-                }
+                let pending = badges.length;
+                if (pending === 0) return callback(null);
 
-                rule.check(memberId, (err, met) => {
-                    if (err && !hadError) {
-                        hadError = true;
-                        return callback(err);
-                    }
-                    if (met) {
-                        Badge.hasBadge(memberId, badge.badge_id, (err, already) => {
-                            if (err && !hadError) {
-                                hadError = true;
-                                return callback(err);
-                            }
-                            if (!already) {
-                                Badge.award(memberId, badge.badge_id, () => {
-                                    pending--;
-                                    if (pending === 0 && !hadError) callback(null);
-                                });
-                            } else {
-                                pending--;
-                                if (pending === 0 && !hadError) callback(null);
-                            }
-                        });
-                    } else {
+                let hadError = false;
+                badges.forEach((badge) => {
+                    const rule = RULES[badge.rule_key];
+                    if (!rule) {
                         pending--;
                         if (pending === 0 && !hadError) callback(null);
+                        return;
                     }
+
+                    rule.check(memberId, (err, met) => {
+                        if (err && !hadError) {
+                            hadError = true;
+                            return callback(err);
+                        }
+                        if (met) {
+                            Badge.hasBadge(memberId, badge.badge_id, (err, already) => {
+                                if (err && !hadError) {
+                                    hadError = true;
+                                    return callback(err);
+                                }
+                                if (!already) {
+                                    Badge.award(memberId, badge.badge_id, () => {
+                                        pending--;
+                                        if (pending === 0 && !hadError) callback(null);
+                                    });
+                                } else {
+                                    pending--;
+                                    if (pending === 0 && !hadError) callback(null);
+                                }
+                            });
+                        } else {
+                            pending--;
+                            if (pending === 0 && !hadError) callback(null);
+                        }
+                    });
                 });
             });
         });
