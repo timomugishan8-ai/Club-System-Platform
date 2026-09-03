@@ -32,6 +32,20 @@ const getMemberActivity = (req, res) => {
     });
 };
 
+const getMyRepositories = (req, res) => {
+    GitHubContribution.getRepositories(req.user.id, (err, results) => {
+        if (err) return res.status(500).json({ message: "Failed to load repositories." });
+        res.json({ repositories: results });
+    });
+};
+
+const getMemberRepositories = (req, res) => {
+    GitHubContribution.getRepositories(req.params.memberId, (err, results) => {
+        if (err) return res.status(500).json({ message: "Failed to load repositories." });
+        res.json({ repositories: results });
+    });
+};
+
 const refreshMyGitHub = (req, res) => {
     db.query(
         "SELECT github_handle FROM members WHERE member_id = ?",
@@ -97,7 +111,7 @@ const refreshMemberGitHub = (req, res) => {
 };
 
 module.exports = {
-    getMyGitHub, getMyActivity,
-    getMemberGitHub, getMemberActivity,
+    getMyGitHub, getMyActivity, getMyRepositories,
+    getMemberGitHub, getMemberActivity, getMemberRepositories,
     refreshMyGitHub, refreshMemberGitHub
 };

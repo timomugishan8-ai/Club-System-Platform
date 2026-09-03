@@ -125,15 +125,16 @@ export default function Settings() {
       {/* GitHub */}
       <Section icon={GitBranch} title="GitHub Integration">
         <form onSubmit={saveProfile} className="space-y-3">
-          <Field label="GitHub handle (without @)" value={profile.github_handle}
+          <Field label="GitHub profile link or username" value={profile.github_handle}
             onChange={(v) => setProfile({ ...profile, github_handle: v })}
-            placeholder="e.g. octocat" />
+            placeholder="e.g. https://github.com/octocat or octocat" />
           <p className="text-xs text-text-muted">
-            Linking your handle enables contribution tracking for your progress and leaderboard score.
+            Paste your GitHub profile link or username. Linking enables contribution
+            tracking for your progress and leaderboard score.
           </p>
           <button type="submit"
             className="rounded-lg bg-gradient-accent px-4 py-2 text-sm font-semibold text-white">
-            Save GitHub Handle
+            Save GitHub Link
           </button>
         </form>
       </Section>

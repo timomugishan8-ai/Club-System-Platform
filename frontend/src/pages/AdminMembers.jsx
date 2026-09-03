@@ -171,7 +171,9 @@ function ProjectsTab({ members }) {
             <div className="font-semibold text-text">{m.first_name} {m.last_name}</div>
             <div className="text-xs text-text-muted">
               {m.github_handle ? (
-                <a href={`https://github.com/${m.github_handle}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-accent hover:underline">
+                <a href={`https://github.com/${m.github_handle}`} target="_blank" rel="noreferrer"
+                  title={`Open github.com/${m.github_handle}`}
+                  className="inline-flex items-center gap-1 text-accent hover:underline">
                   @{m.github_handle} <ExternalLink className="h-3 w-3" />
                 </a>
               ) : 'No GitHub linked'}

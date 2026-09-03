@@ -168,9 +168,11 @@ export const api = {
   github: {
     myStats: () => request('/github/me'),
     myActivity: () => request('/github/me/activity'),
+    myRepositories: () => request('/github/me/repositories'),
     refreshMy: () => request('/github/me/refresh', { method: 'POST' }),
     memberStats: (id) => request(`/github/member/${id}`),
     memberActivity: (id) => request(`/github/member/${id}/activity`),
+    memberRepositories: (id) => request(`/github/member/${id}/repositories`),
     refreshMember: (id) => request(`/github/member/${id}/refresh`, { method: 'POST' }),
   },
 

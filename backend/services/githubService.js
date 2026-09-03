@@ -118,7 +118,59 @@ const buildDailyActivity = (events) => {
         if (!date) continue;
         map[date] = (map[date] || 0) + 1;
     }
-    return Object.entries(map).map(([date, count]) => ({ date, count }));
+    return map;
+};
+
+// GitHub GraphQL: contributionsCollection returns a full year of daily
+// contribution counts (commits, PRs, issues across all public repos) —
+// history the REST events API cannot provide. Requires a token.
+const fetchContributionCalendar = async (handle) => {
+    if (!process.env.GITHUB_TOKEN) return null;
+
+    const query = `
+        query($login: String!) {
+            user(login: $login) {
+                contributionsCollection {
+                    contributionCalendar {
+                        totalContributions
+                        weeks {
+                            contributionDays {
+                                date
+                                contributionCount
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    `;
+
+    try {
+        const res = await fetch(`${GITHUB_API}/graphql`, {
+            method: "POST",
+            headers: {
+                ...headers(),
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ query, variables: { login: handle } })
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.errors || !data.data?.user?.contributionsCollection) return null;
+
+        const calendar = data.data.user.contributionsCollection.contributionCalendar;
+        const daily = {};
+        for (const week of calendar.weeks || []) {
+            for (const day of week.contributionDays || []) {
+                if (!day.date) continue;
+                daily[day.date] = (daily[day.date] || 0) + (day.contributionCount || 0);
+            }
+        }
+        return daily;
+    } catch {
+        // GraphQL failure must never break the REST-based refresh.
+        return null;
+    }
 };
 
 const refreshForMember = (memberId, githubHandle) => {
@@ -128,13 +180,42 @@ const refreshForMember = (memberId, githubHandle) => {
         }
 
         try {
-            const [repos, events] = await Promise.all([
+            // Verify the handle exists on GitHub so a typo doesn't silently
+            // wipe existing stats with zeros (/repos & /events return 404).
+            const user = await ghFetch(`${GITHUB_API}/users/${githubHandle}`);
+            if (!user) {
+                return reject(new Error(
+                    `GitHub user '${githubHandle}' not found. Check the handle or profile link saved in your profile settings.`
+                ));
+            }
+
+            const [repos, events, calendar] = await Promise.all([
                 fetchAllRepos(githubHandle),
-                fetchUserEvents(githubHandle)
+                fetchUserEvents(githubHandle),
+                fetchContributionCalendar(githubHandle)
             ]);
 
             const stats = aggregateStats(repos, events);
-            const daily = buildDailyActivity(events);
+
+            // Merge REST events (~90 days) with the GraphQL year calendar so
+            // the heatmap covers the full past year when a token is configured.
+            const dailyMap = { ...buildDailyActivity(events), ...(calendar || {}) };
+            const daily = Object.entries(dailyMap)
+                .map(([date, count]) => ({ date, count }))
+                .filter((d) => d.count > 0);
+
+            const repoRows = repos.map((r) => ({
+                github_repo_id: r.id,
+                name: r.name,
+                full_name: r.full_name,
+                description: r.description,
+                html_url: r.html_url,
+                language: r.language,
+                star_count: r.stargazers_count,
+                fork_count: r.forks_count,
+                is_fork: !!r.fork,
+                pushed_at: r.pushed_at ? r.pushed_at.replace("T", " ").replace("Z", "") : null
+            }));
 
             GitHubContribution.upsertSummary(memberId, stats, (err) => {
                 if (err) return reject(err);
@@ -142,13 +223,17 @@ const refreshForMember = (memberId, githubHandle) => {
                 GitHubContribution.replaceDailyActivity(memberId, daily, (err) => {
                     if (err) return reject(err);
 
-                    GitHubContribution.getStreak(memberId, (err, streak) => {
+                    GitHubContribution.replaceRepositories(memberId, repoRows, (err) => {
                         if (err) return reject(err);
 
-                        const finalStats = { ...stats, streak_days: streak };
-                        GitHubContribution.upsertSummary(memberId, finalStats, (err) => {
+                        GitHubContribution.getStreak(memberId, (err, streak) => {
                             if (err) return reject(err);
-                            resolve(finalStats);
+
+                            const finalStats = { ...stats, streak_days: streak };
+                            GitHubContribution.upsertSummary(memberId, finalStats, (err) => {
+                                if (err) return reject(err);
+                                resolve(finalStats);
+                            });
                         });
                     });
                 });

@@ -155,7 +155,7 @@ export default function Dashboard() {
           <div className="mt-4">
             <GitHubHeatmap activity={activity} />
           </div>
-          {github && (github.repo_count > 0 || github.commit_count > 0 || github.issue_count > 0) ? (
+          {handle ? (
             <a href={`https://github.com/${handle}`} target="_blank" rel="noreferrer"
               className="mt-4 flex items-center justify-center gap-1 rounded-lg border border-border py-2 text-sm text-text-soft hover:bg-card-2">
               View GitHub Profile ↗
@@ -163,7 +163,7 @@ export default function Dashboard() {
           ) : (
             <Link to="/profile"
               className="mt-4 flex items-center justify-center gap-1 rounded-lg border border-dashed border-border py-2 text-sm text-text-muted hover:bg-card-2 hover:text-text-soft">
-              {handle ? 'No stats yet — refresh your GitHub stats' : 'Link your GitHub account to see stats'} →
+              Link your GitHub account to see stats →
             </Link>
           )}
         </div>

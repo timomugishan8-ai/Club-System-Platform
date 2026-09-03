@@ -1,19 +1,24 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
-import { FolderGit2, Plus, X } from 'lucide-react'
+import { FolderGit2, Plus, X, GitBranch, Star, GitFork } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 export default function Projects() {
-  const { isAdmin, isLeader } = useAuth()
+  const { isAdmin, isLeader, user } = useAuth()
   const canCreate = isAdmin || isLeader
   const [projects, setProjects] = useState([])
+  const [repos, setRepos] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ title: '', description: '', repo_url: '', status: 'Planning' })
 
   const load = () => {
     api.projects.list().then((d) => setProjects(d.projects || [])).finally(() => setLoading(false))
+    // GitHub account repos (cached at last stats refresh); null when no stats synced
+    api.github.myRepositories()
+      .then((d) => setRepos(d.repositories || []))
+      .catch(() => setRepos(null))
   }
 
   useEffect(() => { load() }, [])
@@ -73,6 +78,56 @@ export default function Projects() {
           ))}
         </div>
       )}
+
+      {/* GitHub account repositories */}
+      <div className="pt-2">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-text">
+          <GitBranch className="h-5 w-5" /> GitHub Repositories
+        </h2>
+        {repos === null ? (
+          <p className="py-6 text-center text-sm text-text-muted">
+            Link your GitHub account and refresh your stats to see your repositories here.
+          </p>
+        ) : repos.length === 0 ? (
+          <p className="py-6 text-center text-sm text-text-muted">
+            No public repositories on your GitHub account yet.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {repos.map((r) => (
+              <div key={r.github_repo_id} className="card flex flex-col p-5">
+                <div className="mb-3 flex items-start justify-between gap-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-card-2">
+                    <GitBranch className="h-5 w-5 text-text-soft" />
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-text-muted">
+                    <span className="flex items-center gap-1"><Star className="h-3.5 w-3.5 text-amber" /> {r.star_count}</span>
+                    <span className="flex items-center gap-1"><GitFork className="h-3.5 w-3.5" /> {r.fork_count}</span>
+                  </div>
+                </div>
+                <a href={r.html_url} target="_blank" rel="noreferrer"
+                  title={`Open github.com/${r.full_name || r.name}`}
+                  className="truncate font-semibold text-accent hover:underline">
+                  {r.name}
+                </a>
+                <p className="mt-1 line-clamp-2 flex-1 text-sm text-text-muted">
+                  {r.description || 'No description.'}
+                </p>
+                <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-text-muted">
+                  <span className="flex items-center gap-1.5">
+                    {r.language && (
+                      <>
+                        <span className="h-2.5 w-2.5 rounded-full bg-accent-3" /> {r.language}
+                      </>
+                    )}
+                  </span>
+                  <span>{r.is_fork ? 'Fork' : 'Repo'}{r.pushed_at ? ` · pushed ${new Date(r.pushed_at).toLocaleDateString()}` : ''}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {showForm && (
         <Modal title="New Project" onClose={() => setShowForm(false)}>

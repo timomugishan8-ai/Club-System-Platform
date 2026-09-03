@@ -9,10 +9,12 @@ router.use(verifyToken);
 
 router.get("/me", githubController.getMyGitHub);
 router.get("/me/activity", githubController.getMyActivity);
+router.get("/me/repositories", githubController.getMyRepositories);
 router.post("/me/refresh", githubController.refreshMyGitHub);
 
 router.get("/member/:memberId", githubController.getMemberGitHub);
 router.get("/member/:memberId/activity", githubController.getMemberActivity);
+router.get("/member/:memberId/repositories", githubController.getMemberRepositories);
 router.post(
     "/member/:memberId/refresh",
     loadRoleName,

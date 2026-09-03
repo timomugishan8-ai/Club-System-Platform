@@ -32,16 +32,27 @@ const updateProfile = (req, res) => {
 
     const data = req.body;
 
-    // Validate GitHub handle format if provided (GitHub: alphanumerics and
-    // single hyphens, max 39 chars, cannot start/end with a hyphen).
-    if (data.github_handle) {
-        const handle = String(data.github_handle).replace(/^@/, "").trim();
-        if (!/^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/.test(handle)) {
-            return res.status(400).json({
-                message: "Invalid GitHub handle. Use only letters, numbers, and single hyphens (no spaces, dots or @)."
-            });
+    // Accept either a bare handle ("octocat", "@octocat") or a full profile
+    // URL ("https://github.com/octocat") and store the normalized handle.
+    // GitHub handles: alphanumerics + single hyphens, max 39 chars.
+    if (data.github_handle !== undefined) {
+        let raw = String(data.github_handle ?? "").trim();
+        if (raw) {
+            raw = raw.replace(/^@/, "");
+            const urlMatch = raw.match(/^(?:https?:\/\/)?(?:www\.)?github\.com\/([^\/?#\s]+)/i);
+            if (urlMatch) {
+                raw = urlMatch[1];
+            }
+            if (!/^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/.test(raw)) {
+                return res.status(400).json({
+                    message: "Invalid GitHub handle. Enter a handle (e.g. octocat) or your profile URL (e.g. https://github.com/octocat)."
+                });
+            }
+            raw = raw.toLowerCase();
+        } else {
+            raw = null; // clearing the handle
         }
-        data.github_handle = handle;
+        data.github_handle = raw;
     }
 
     Member.updateProfile(memberId, data, (err) => {

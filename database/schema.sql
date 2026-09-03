@@ -348,7 +348,9 @@ CREATE TABLE github_contributions (
 
     FOREIGN KEY (member_id)
         REFERENCES members(member_id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+
+    UNIQUE (member_id)
 );
 
 -- Per-day contribution counts (for heatmap rendering)
@@ -363,6 +365,29 @@ CREATE TABLE github_daily_activity (
         ON DELETE CASCADE,
 
     UNIQUE (member_id, activity_date)
+);
+
+-- Cached GitHub repositories per member (refreshed with stats)
+CREATE TABLE github_repositories (
+    repository_id  INT AUTO_INCREMENT PRIMARY KEY,
+    member_id      INT NOT NULL,
+    github_repo_id BIGINT NOT NULL,
+    name           VARCHAR(200) NOT NULL,
+    full_name      VARCHAR(300),
+    description    TEXT,
+    html_url       VARCHAR(400),
+    language       VARCHAR(100),
+    star_count     INT DEFAULT 0,
+    fork_count     INT DEFAULT 0,
+    is_fork        BOOLEAN DEFAULT FALSE,
+    pushed_at      TIMESTAMP NULL,
+    fetched_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (member_id)
+        REFERENCES members(member_id)
+        ON DELETE CASCADE,
+
+    UNIQUE (member_id, github_repo_id)
 );
 
 -- -------------------------------------------

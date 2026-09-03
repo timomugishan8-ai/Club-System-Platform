@@ -71,6 +71,51 @@ const GitHubContribution = {
         db.query(sql, [memberId], callback);
     },
 
+    replaceRepositories: (memberId, repos, callback) => {
+        db.query(
+            "DELETE FROM github_repositories WHERE member_id = ?",
+            [memberId],
+            (err) => {
+                if (err) return callback(err);
+                if (!repos || repos.length === 0) return callback(null);
+
+                const values = repos.map((r) => [
+                    memberId,
+                    r.github_repo_id,
+                    r.name,
+                    r.full_name || null,
+                    r.description || null,
+                    r.html_url || null,
+                    r.language || null,
+                    r.star_count || 0,
+                    r.fork_count || 0,
+                    r.is_fork ? 1 : 0,
+                    r.pushed_at || null
+                ]);
+
+                const sql = `
+                    INSERT INTO github_repositories
+                        (member_id, github_repo_id, name, full_name, description,
+                         html_url, language, star_count, fork_count, is_fork, pushed_at)
+                    VALUES ?
+                `;
+                db.query(sql, [values], callback);
+            }
+        );
+    },
+
+    getRepositories: (memberId, callback) => {
+        db.query(
+            `SELECT github_repo_id, name, full_name, description, html_url,
+                    language, star_count, fork_count, is_fork, pushed_at, fetched_at
+             FROM github_repositories
+             WHERE member_id = ?
+             ORDER BY pushed_at DESC, star_count DESC`,
+            [memberId],
+            callback
+        );
+    },
+
     getStreak: (memberId, callback) => {
         const sql = `
             SELECT activity_date, count

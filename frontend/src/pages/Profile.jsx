@@ -54,7 +54,12 @@ export default function Profile() {
     e.preventDefault()
     setMsg(''); setError('')
     try {
-      await api.members.updateMe({ github_handle: handle.trim() || null })
+      const value = handle.trim()
+      // Send bare handles as-is; normalize pasted profile URLs to a handle
+      // client-side so the stored value is always a clean handle.
+      const urlMatch = value.match(/^(?:https?:\/\/)?(?:www\.)?github\.com\/([^\/?#\s]+)/i)
+      const handleValue = value ? (urlMatch ? urlMatch[1].replace(/^@/, '') : value.replace(/^@/, '')) : null
+      await api.members.updateMe({ github_handle: handleValue || null })
       await refreshStats()
       load()
     } catch (err) {
@@ -96,9 +101,9 @@ export default function Profile() {
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                 {refreshing ? 'Syncing…' : 'Refresh GitHub Stats'}
               </button>
-              <button onClick={() => { setEditHandle(true); setMsg(''); setError('') }}
+              <button onClick={() => { setEditHandle(true); setHandle(member.github_handle ? `https://github.com/${member.github_handle}` : ''); setMsg(''); setError('') }}
                 className="rounded-lg border border-border px-4 py-2 text-sm text-text-soft hover:bg-card-2">
-                {member.github_handle ? 'Change GitHub Handle' : 'Link GitHub Account'}
+                {member.github_handle ? 'Change GitHub Link' : 'Link GitHub Account'}
               </button>
             </div>
           )}
@@ -114,7 +119,9 @@ export default function Profile() {
         <DetailCard icon={Phone} label="Phone" value={member.phone || '—'} />
         <DetailCard icon={BookOpen} label="Course" value={member.course || '—'} />
         <DetailCard icon={User} label="Student No." value={member.student_number || '—'} />
-        <DetailCard icon={GitBranch} label="GitHub" value={member.github_handle || 'Not linked'} />
+        <DetailCard icon={GitBranch} label="GitHub"
+          value={member.github_handle ? `@${member.github_handle}` : 'Not linked'}
+          href={member.github_handle ? `https://github.com/${member.github_handle}` : null} />
         <DetailCard icon={Calendar} label="Joined" value={member.join_date || '—'} />
       </div>
 
@@ -127,8 +134,9 @@ export default function Profile() {
             </h3>
             {member.github_handle && (
               <a href={`https://github.com/${member.github_handle}`} target="_blank" rel="noreferrer"
+                title={`Open github.com/${member.github_handle}`}
                 className="text-xs text-accent hover:underline">
-                @{member.github_handle} ↗
+                View on GitHub ↗
               </a>
             )}
           </div>
@@ -173,10 +181,11 @@ export default function Profile() {
           <form onSubmit={saveHandle} className="space-y-3">
             <input value={handle}
               onChange={(e) => setHandle(e.target.value)}
-              placeholder="GitHub handle (without @), e.g. octocat"
+              placeholder="Profile URL or handle, e.g. https://github.com/octocat"
               className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-text focus:border-accent focus:outline-none" />
             <p className="text-xs text-text-muted">
-              Saving your handle also triggers a stats refresh for the dashboard heatmap.
+              Paste your GitHub profile link (https://github.com/username) or just your username.
+              Saving also triggers a stats refresh for the heatmap.
             </p>
             <div className="flex gap-2">
               <button type="submit"
@@ -202,9 +211,9 @@ export default function Profile() {
   )
 }
 
-function DetailCard({ icon: Icon, label, value }) {
-  return (
-    <div className="card flex items-center gap-3 p-4">
+function DetailCard({ icon: Icon, label, value, href }) {
+  const content = (
+    <>
       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-card-2">
         <Icon className="h-5 w-5 text-text-muted" />
       </div>
@@ -212,6 +221,20 @@ function DetailCard({ icon: Icon, label, value }) {
         <div className="text-xs text-text-muted">{label}</div>
         <div className="truncate text-sm text-text">{value}</div>
       </div>
+    </>
+  )
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer"
+        title="Open GitHub profile"
+        className="card flex items-center gap-3 p-4 transition-colors hover:border-accent">
+        {content}
+      </a>
+    )
+  }
+  return (
+    <div className="card flex items-center gap-3 p-4">
+      {content}
     </div>
   )
 }
