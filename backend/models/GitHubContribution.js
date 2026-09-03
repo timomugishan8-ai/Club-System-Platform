@@ -63,7 +63,7 @@ const GitHubContribution = {
 
     getDailyActivity: (memberId, callback) => {
         const sql = `
-            SELECT activity_date, count
+            SELECT DATE_FORMAT(activity_date, '%Y-%m-%d') AS activity_date, count
             FROM github_daily_activity
             WHERE member_id = ?
             ORDER BY activity_date ASC

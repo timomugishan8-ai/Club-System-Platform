@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 
 const GH_COLORS = [
-  '#161B27', // 0 contributions (matches card bg)
+  '#FFFFFF', // 0 contributions (empty)
   '#0E4429',
   '#006D32',
   '#26A641',
@@ -19,10 +19,19 @@ const getColor = (count) => {
   return GH_COLORS[4]
 }
 
+const localDateKey = (date) => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 const buildGrid = (activity) => {
   const map = {}
   for (const row of activity) {
-    map[row.activity_date] = row.count
+    // Rows may be "YYYY-MM-DD" strings or legacy ISO timestamps; normalize
+    // to a local calendar-day key so lookups match the grid exactly.
+    map[String(row.activity_date).slice(0, 10)] = row.count
   }
 
   const today = new Date()
@@ -42,7 +51,7 @@ const buildGrid = (activity) => {
     for (let d = 0; d < 7; d++) {
       const date = new Date(cursor)
       date.setDate(date.getDate() + d)
-      const key = date.toISOString().slice(0, 10)
+      const key = localDateKey(date)
       const count = map[key] || 0
       week.push({ date: new Date(date), count, key })
     }
@@ -114,12 +123,14 @@ export default function GitHubHeatmap({ activity = [], cellSize = 11, gap = 3 })
                 {week.map((cell) => (
                   <div
                     key={cell.key}
-                    title={`${cell.date.toISOString().slice(0, 10)}: ${cell.count} contribution${cell.count !== 1 ? 's' : ''}`}
+                    title={`${cell.key}: ${cell.count} contribution${cell.count !== 1 ? 's' : ''}`}
                     className="rounded-[2px] transition-colors"
                     style={{
                       width: cellSize,
                       height: cellSize,
                       backgroundColor: getColor(cell.count),
+                      border: '1px solid #000000',
+                      boxSizing: 'border-box',
                     }}
                   />
                 ))}
@@ -135,7 +146,7 @@ export default function GitHubHeatmap({ activity = [], cellSize = 11, gap = 3 })
             <div
               key={c}
               className="rounded-[2px]"
-              style={{ width: cellSize, height: cellSize, backgroundColor: c }}
+              style={{ width: cellSize, height: cellSize, backgroundColor: c, border: '1px solid #000000', boxSizing: 'border-box' }}
             />
           ))}
           <span>More</span>

@@ -140,6 +140,9 @@ const fetchContributionCalendar = async (handle) => {
                             }
                         }
                     }
+                    totalCommitContributions
+                    totalPullRequestContributions
+                    totalIssueContributions
                 }
             }
         }
@@ -158,7 +161,8 @@ const fetchContributionCalendar = async (handle) => {
         const data = await res.json();
         if (data.errors || !data.data?.user?.contributionsCollection) return null;
 
-        const calendar = data.data.user.contributionsCollection.contributionCalendar;
+        const cc = data.data.user.contributionsCollection;
+        const calendar = cc.contributionCalendar;
         const daily = {};
         for (const week of calendar.weeks || []) {
             for (const day of week.contributionDays || []) {
@@ -166,7 +170,17 @@ const fetchContributionCalendar = async (handle) => {
                 daily[day.date] = (daily[day.date] || 0) + (day.contributionCount || 0);
             }
         }
-        return daily;
+        return {
+            daily,
+            totals: {
+                commit_count: calendar.totalContributions
+                    ? cc.totalCommitContributions || 0
+                    : 0,
+                pr_count: cc.totalPullRequestContributions || 0,
+                issue_count: cc.totalIssueContributions || 0,
+                contributions_total: calendar.totalContributions || 0
+            }
+        };
     } catch {
         // GraphQL failure must never break the REST-based refresh.
         return null;
@@ -189,7 +203,7 @@ const refreshForMember = (memberId, githubHandle) => {
                 ));
             }
 
-            const [repos, events, calendar] = await Promise.all([
+            const [repos, events, ghYear] = await Promise.all([
                 fetchAllRepos(githubHandle),
                 fetchUserEvents(githubHandle),
                 fetchContributionCalendar(githubHandle)
@@ -197,9 +211,17 @@ const refreshForMember = (memberId, githubHandle) => {
 
             const stats = aggregateStats(repos, events);
 
+            // GraphQL totals cover the past year across all repos — far more
+            // accurate than REST events (~90 days), so they win when present.
+            if (ghYear) {
+                stats.commit_count = ghYear.totals.commit_count;
+                stats.pr_count = ghYear.totals.pr_count;
+                stats.issue_count = ghYear.totals.issue_count;
+            }
+
             // Merge REST events (~90 days) with the GraphQL year calendar so
             // the heatmap covers the full past year when a token is configured.
-            const dailyMap = { ...buildDailyActivity(events), ...(calendar || {}) };
+            const dailyMap = { ...buildDailyActivity(events), ...(ghYear ? ghYear.daily : {}) };
             const daily = Object.entries(dailyMap)
                 .map(([date, count]) => ({ date, count }))
                 .filter((d) => d.count > 0);

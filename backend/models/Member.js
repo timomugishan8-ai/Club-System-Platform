@@ -5,8 +5,9 @@ const Member = {
         const sql = `
             INSERT INTO members
                 (email, password_hash, role_id, first_name, last_name,
-                 student_number, gender, phone, course, year_of_study, join_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 student_number, gender, phone, course, year_of_study,
+                 github_handle, bio, notify_email, notify_inapp, join_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         const params = [
             data.email,
@@ -19,6 +20,10 @@ const Member = {
             data.phone || null,
             data.course || null,
             data.year_of_study || null,
+            data.github_handle || null,
+            data.bio || null,
+            data.notify_email === false ? 0 : 1,
+            data.notify_inapp === false ? 0 : 1,
             data.join_date || null
         ];
         db.query(sql, params, callback);

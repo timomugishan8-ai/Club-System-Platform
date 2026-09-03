@@ -15,7 +15,11 @@ const register = async (req, res) => {
             gender,
             phone,
             course,
-            year_of_study
+            year_of_study,
+            github_handle,
+            bio,
+            notify_email,
+            notify_inapp
         } = req.body;
 
         if (!isNonEmptyString(email) || !isNonEmptyString(password) ||
@@ -23,6 +27,21 @@ const register = async (req, res) => {
             return res.status(400).json({
                 message: "email, password, first_name and last_name are required."
             });
+        }
+
+        // Accept a bare handle ("octocat", "@octocat") or a full profile URL
+        // ("https://github.com/octocat"); store the normalized handle.
+        let handle = null;
+        if (github_handle) {
+            handle = String(github_handle).trim().replace(/^@/, "");
+            const urlMatch = handle.match(/^(?:https?:\/\/)?(?:www\.)?github\.com\/([^\/?#\s]+)/i);
+            if (urlMatch) handle = urlMatch[1];
+            if (!/^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/.test(handle)) {
+                return res.status(400).json({
+                    message: "Invalid GitHub handle. Enter a handle (e.g. octocat) or your profile URL (e.g. https://github.com/octocat)."
+                });
+            }
+            handle = handle.toLowerCase();
         }
 
         Member.findByEmail(email, async (err, results) => {
@@ -44,6 +63,10 @@ const register = async (req, res) => {
                 phone,
                 course,
                 year_of_study,
+                github_handle: handle,
+                bio: bio ? String(bio).slice(0, 1000) : null,
+                notify_email,
+                notify_inapp,
                 join_date: new Date().toISOString().slice(0, 10)
             }, (err) => {
                 if (err) {

@@ -8,7 +8,8 @@ export default function Register() {
   const navigate = useNavigate()
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '', password: '',
-    student_number: '', course: '', year_of_study: '',
+    student_number: '', gender: '', phone: '', course: '', year_of_study: '',
+    github_handle: '', bio: '',
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -119,9 +120,40 @@ export default function Register() {
                   className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-text focus:border-accent focus:outline-none" />
               </label>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="mb-1.5 block text-sm text-text-soft">Gender</span>
+                <select name="gender" value={form.gender} onChange={handleChange}
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-text focus:border-accent focus:outline-none">
+                  <option value="">Prefer not to say</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-sm text-text-soft">Year of study</span>
+                <input type="number" name="year_of_study" value={form.year_of_study} onChange={handleChange} min="1" max="6"
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-text focus:border-accent focus:outline-none" />
+              </label>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="mb-1.5 block text-sm text-text-soft">Phone</span>
+                <input name="phone" value={form.phone} onChange={handleChange} placeholder="+256..."
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-text focus:border-accent focus:outline-none" />
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-sm text-text-soft">GitHub profile link <span className="text-text-muted">(optional)</span></span>
+                <input name="github_handle" value={form.github_handle} onChange={handleChange}
+                  placeholder="https://github.com/username"
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-text focus:border-accent focus:outline-none" />
+              </label>
+            </div>
             <label className="block">
-              <span className="mb-1.5 block text-sm text-text-soft">Year of study</span>
-              <input type="number" name="year_of_study" value={form.year_of_study} onChange={handleChange} min="1" max="6"
+              <span className="mb-1.5 block text-sm text-text-soft">Short bio <span className="text-text-muted">(optional)</span></span>
+              <textarea name="bio" value={form.bio} onChange={handleChange} rows={3}
+                placeholder="A line or two about you — interests, skills, goals…"
                 className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-text focus:border-accent focus:outline-none" />
             </label>
             <button type="submit" disabled={loading}

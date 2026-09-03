@@ -140,7 +140,11 @@ export default function Dashboard() {
               { label: 'Commits', value: github?.commit_count ?? 0 },
               { label: 'Pull Requests', value: github?.pr_count ?? 0 },
               { label: 'Issues', value: github?.issue_count ?? 0 },
-              { label: 'Contributions', value: (github?.commit_count || 0) + (github?.pr_count || 0) + (github?.issue_count || 0) },
+              {
+                label: 'Contributions',
+                value: (github?.commit_count || 0) + (github?.pr_count || 0) + (github?.issue_count || 0)
+                  || activity.reduce((sum, a) => sum + (a.count || 0), 0),
+              },
               { label: 'Day Streak', value: github?.streak_days ?? 0, flame: true },
             ].map((m) => (
               <div key={m.label} className="rounded-lg bg-card-2 p-3.5">
