@@ -17,6 +17,7 @@ const sql = `
         m.join_date,
         m.approval_status,
         m.is_active,
+        m.committee_id,
         COALESCE(r.role_name, 'Member') AS role_name,
         COALESCE(c.committee_name, 'Unassigned') AS committee,
         COALESCE(SUM(pts.points), 0) AS total_points,

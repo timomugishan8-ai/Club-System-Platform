@@ -1,12 +1,15 @@
 const API_BASE = '/api'
 
 function getToken() {
-  return localStorage.getItem('token')
+  // sessionStorage: login only lasts for the current tab/browser session.
+  // Starting the app fresh always lands on the login page; an in-session
+  // refresh keeps the user signed in.
+  return sessionStorage.getItem('token')
 }
 
 function setToken(token) {
-  if (token) localStorage.setItem('token', token)
-  else localStorage.removeItem('token')
+  if (token) sessionStorage.setItem('token', token)
+  else sessionStorage.removeItem('token')
 }
 
 async function request(path, { method = 'GET', body, headers } = {}) {
@@ -82,6 +85,8 @@ export const api = {
     update: (id, body) => request(`/members/${id}`, { method: 'PUT', body }),
     updateMe: (body) => request(`/members/me`, { method: 'PUT', body }),
     changePassword: (body) => request('/members/me/password', { method: 'PUT', body }),
+    uploadAvatar: (formData) => upload('/members/me/avatar', formData),
+    removeAvatar: () => request('/members/me/avatar', { method: 'DELETE' }),
     remove: (id) => request(`/members/${id}`, { method: 'DELETE' }),
   },
 
@@ -205,6 +210,17 @@ export const api = {
     markAllRead: () => request('/notifications/read-all', { method: 'POST' }),
   },
 
+  // Global search
+  search: {
+    query: (q) => request(`/search?q=${encodeURIComponent(q)}`),
+  },
+
+  // Committees
+  committees: {
+    list: () => request('/committees'),
+    create: (name, description) => request('/committees', { method: 'POST', body: { name, description } }),
+  },
+
   // Admin
   // Admin
   admin: {
@@ -213,6 +229,8 @@ export const api = {
     reject: (id) => request(`/admin/pending/${id}/reject`, { method: 'POST' }),
     membersOverview: () => request('/admin/members-overview'),
     setRole: (id, role) => request(`/admin/members/${id}/role`, { method: 'PUT', body: { role } }),
+    setCommittee: (id, committee_id) => request(`/members/${id}`, { method: 'PUT', body: { committee_id } }),
+    removeMember: (id) => request(`/admin/members/${id}`, { method: 'DELETE' }),
   },
 
   // Analytics (Admin)

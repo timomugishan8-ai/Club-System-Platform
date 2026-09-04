@@ -4,7 +4,7 @@ import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
 import {
   Users, TrendingUp, FolderGit2, CalendarCheck, Trophy,
-  GitBranch, Mail, Phone, BookOpen, ExternalLink,
+  GitBranch, Mail, Phone, BookOpen, ExternalLink, UserX,
 } from 'lucide-react'
 
 const TIERS = [
@@ -26,6 +26,7 @@ const TABS = [
 
 export default function AdminMembers() {
   const [members, setMembers] = useState([])
+  const [committees, setCommittees] = useState([])
   const [tab, setTab] = useState('members')
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -36,8 +37,9 @@ export default function AdminMembers() {
     Promise.all([
       api.admin.membersOverview(),
       api.leaderboard.all().catch(() => null),
+      api.committees.list().catch(() => null),
     ])
-      .then(([mo, lb]) => {
+      .then(([mo, lb, cm]) => {
         const withTiers = lb?.leaderboard || []
         setMembers((mo.members || []).map((m) => {
           const match = withTiers.find((r) => r.member_id === m.member_id)
@@ -50,6 +52,7 @@ export default function AdminMembers() {
             progress_score: match?.progress_score ?? Number(m.total_points) + Number(m.github_score || 0),
           }
         }))
+        setCommittees(cm?.committees || [])
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
@@ -61,6 +64,36 @@ export default function AdminMembers() {
       const d = await api.admin.setRole(memberId, role)
       setMembers((prev) => prev.map((m) => (m.member_id === memberId ? { ...m, role_name: role } : m)))
       setNotice(d.message || `Role updated to ${role}.`)
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  const handleCommitteeChange = async (memberId, committeeId) => {
+    setNotice(''); setError('')
+    const label = committeeId ? committees.find((c) => c.committee_id === Number(committeeId))?.committee_name : 'Unassigned'
+    try {
+      const d = await api.admin.setCommittee(memberId, committeeId ? Number(committeeId) : null)
+      const name = committees.find((c) => c.committee_id === Number(committeeId))?.committee_name || null
+      setMembers((prev) => prev.map((m) => (m.member_id === memberId ? { ...m, committee: name } : m)))
+      setNotice(d.message || `Committee updated to ${label}.`)
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  const handleDelete = async (m) => {
+    const name = `${m.first_name} ${m.last_name}`
+    if (!confirm(
+      `Remove ${name} from the chapter?\n\n` +
+      'This permanently deletes their profile, attendance, participation, points, badges, articles and projects.\n' +
+      'Meetings/events/announcements they created will be kept under your name. This cannot be undone.'
+    )) return
+    setNotice(''); setError('')
+    try {
+      const d = await api.admin.removeMember(m.member_id)
+      setMembers((prev) => prev.filter((x) => x.member_id !== m.member_id))
+      setNotice(d.message || `${name} has been removed.`)
     } catch (e) {
       setError(e.message)
     }
@@ -106,7 +139,15 @@ export default function AdminMembers() {
         })}
       </div>
 
-      {tab === 'members' && <MembersTab members={filtered} onRoleChange={handleRoleChange} />}
+      {tab === 'members' && (
+        <MembersTab
+          members={filtered}
+          committees={committees}
+          onRoleChange={handleRoleChange}
+          onCommitteeChange={handleCommitteeChange}
+          onDelete={handleDelete}
+        />
+      )}
       {tab === 'progress' && <ProgressTab members={filtered} />}
       {tab === 'projects' && <ProjectsTab members={filtered} />}
       {tab === 'attendance' && <AttendanceTab members={filtered} />}
@@ -116,7 +157,7 @@ export default function AdminMembers() {
 }
 
 /* ---------- Members (profiles) ---------- */
-function MembersTab({ members, onRoleChange }) {
+function MembersTab({ members, committees, onRoleChange, onCommitteeChange, onDelete }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {members.map((m) => (
@@ -153,6 +194,29 @@ function MembersTab({ members, onRoleChange }) {
               {m.role_name === 'Admin' && <option>Admin</option>}
               <option>Member</option>
               <option>Leader</option>
+            </select>
+            <button
+              onClick={() => onDelete(m)}
+              title="Permanently remove this member"
+              className="rounded-lg border border-danger/40 p-1.5 text-danger transition-colors hover:bg-danger-soft"
+            >
+              <UserX className="h-4 w-4" />
+            </button>
+          </div>
+          {/* Committee assignment (Admin only) */}
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-xs text-text-muted">Committee:</span>
+            <select
+              value={m.committee_id ?? ''}
+              onChange={(e) => onCommitteeChange(m.member_id, e.target.value)}
+              disabled={m.role_name === 'Admin' || committees.length === 0}
+              title={m.role_name === 'Admin' ? 'The admin account is neutral — no committee' : 'Assign this member to a committee'}
+              className="flex-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs text-text focus:border-accent focus:outline-none disabled:opacity-50"
+            >
+              <option value="">Unassigned</option>
+              {committees.map((c) => (
+                <option key={c.committee_id} value={c.committee_id}>{c.committee_name}</option>
+              ))}
             </select>
           </div>
         </div>

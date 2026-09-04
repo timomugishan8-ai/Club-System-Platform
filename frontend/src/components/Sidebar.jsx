@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import useSidebarCounts from '../hooks/useSidebarCounts'
@@ -6,6 +7,7 @@ import {
   CalendarCheck, Trophy, Megaphone, Database, Settings,
   ChevronDown, UserCheck, CalendarDays, BarChart2,
   FileText, ClipboardCheck, FileBarChart, Users,
+  LogOut,
 } from 'lucide-react'
 import chapterLogo from '../assets/chapter-logo.jpg'
 
@@ -57,11 +59,28 @@ export default function Sidebar({ onCollapse }) {
   const { user, logout, isAdmin, isLeader } = useAuth()
   const navigate = useNavigate()
   const { counts } = useSidebarCounts()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [confirmLogout, setConfirmLogout] = useState(false)
+  const menuRef = useRef(null)
 
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
+
+  // Close the account menu on outside click
+  useEffect(() => {
+    const onClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [])
+
+  const menuItems = [
+    { label: 'View Profile', icon: User, action: () => navigate('/profile') },
+    { label: 'Settings', icon: Settings, action: () => navigate('/settings') },
+  ]
 
   // Map sidebar routes to badge count keys
   const badgeKey = {
@@ -126,29 +145,77 @@ export default function Sidebar({ onCollapse }) {
         })}
       </nav>
 
-      {/* User card */}
-      <div className="border-t border-border p-3">
-        <div className="flex items-center gap-3 rounded-xl px-2 py-2">
-          <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-card-2 text-sm font-semibold text-accent">
-            {user?.avatar_url ? (
-              <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
-            ) : (
-              `${user?.first_name?.[0] || '?'}${user?.last_name?.[0] || ''}`
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium text-text">
-              {user?.first_name} {user?.last_name}
-            </div>
-            <div className="truncate text-xs text-text-muted">{user?.role_name}</div>
-          </div>
+      {/* User card — opens the account menu */}
+      <div className="border-t border-border p-3" ref={menuRef}>
+        <div className="relative">
           <button
-            onClick={handleLogout}
-            className="rounded-md p-1 text-text-muted hover:bg-card hover:text-text-soft"
-            title="Log out"
+            onClick={() => { setMenuOpen((o) => !o); setConfirmLogout(false) }}
+            className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-card"
           >
-            <ChevronDown className="h-4 w-4" />
+            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-card-2 text-sm font-semibold text-accent">
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                `${user?.first_name?.[0] || '?'}${user?.last_name?.[0] || ''}`
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-medium text-text">
+                {user?.first_name} {user?.last_name}
+              </div>
+              <div className="truncate text-xs text-text-muted">{user?.role_name}</div>
+            </div>
+            <ChevronDown className={`h-4 w-4 shrink-0 text-text-muted transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
           </button>
+
+          {menuOpen && (
+            <div className="absolute bottom-full left-0 right-0 z-50 mb-2 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+              {menuItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <button
+                    key={item.label}
+                    onClick={() => { setMenuOpen(false); item.action() }}
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-text-soft hover:bg-card-2"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </button>
+                )
+              })}
+              <div className="border-t border-border">
+                {confirmLogout ? (
+                  <div className="p-3">
+                    <p className="mb-2 text-xs text-text-muted">
+                      Log out of your account?
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleLogout}
+                        className="flex-1 rounded-lg bg-danger px-3 py-1.5 text-xs font-semibold text-white"
+                      >
+                        Log out
+                      </button>
+                      <button
+                        onClick={() => setConfirmLogout(false)}
+                        className="flex-1 rounded-lg border border-border px-3 py-1.5 text-xs text-text-soft hover:bg-card-2"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmLogout(true)}
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-danger hover:bg-card-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Log out
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </aside>

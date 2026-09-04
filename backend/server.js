@@ -11,6 +11,7 @@ const { startNightlyRefresh } = require("./services/githubService");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const memberRoutes = require("./routes/memberRoutes");
+const committeeRoutes = require("./routes/committeeRoutes");
 const meetingRoutes = require("./routes/meetingRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
 const participationRoutes = require("./routes/participationRoutes");
@@ -29,6 +30,7 @@ const sidebarCountRoutes = require("./routes/sidebarCountRoutes");
 const badgeRoutes = require("./routes/badgeRoutes");
 const pointAdjustmentRoutes = require("./routes/pointAdjustmentRoutes");
 const systemSettingsRoutes = require("./routes/systemSettingsRoutes");
+const searchRoutes = require("./routes/searchRoutes");
 
 const app = express();
 
@@ -41,6 +43,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/members", memberRoutes);
+app.use("/api/committees", committeeRoutes);
 app.use("/api/meetings", meetingRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/participation", participationRoutes);
@@ -59,6 +62,7 @@ app.use("/api/badges", badgeRoutes);
 app.use("/api/point-adjustments", pointAdjustmentRoutes);
 app.use("/api/sidebar-counts", sidebarCountRoutes);
 app.use("/api/system-settings", systemSettingsRoutes);
+app.use("/api/search", searchRoutes);
 
 // Health check
 app.get("/", (req, res) => {

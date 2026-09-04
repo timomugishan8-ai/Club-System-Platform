@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
-import { Mail, Phone, BookOpen, GitBranch, Calendar, User, RefreshCw } from 'lucide-react'
+import { Mail, Phone, BookOpen, GitBranch, Calendar, User, RefreshCw, Camera, Trash2, Loader2 } from 'lucide-react'
 
 export default function Profile() {
   const { id } = useParams()
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const targetId = id || user?.member_id
   const isMe = String(targetId) === String(user?.member_id)
   const [member, setMember] = useState(null)
@@ -17,6 +17,8 @@ export default function Profile() {
   const [handle, setHandle] = useState('')
   const [msg, setMsg] = useState('')
   const [error, setError] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef(null)
 
   const load = () => {
     api.members.getById(targetId).then((d) => {
@@ -61,6 +63,47 @@ export default function Profile() {
     }
   }
 
+  const onPickPhoto = () => fileInputRef.current?.click()
+
+  const onPhotoSelected = (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file (JPG, PNG, GIF, or WebP).')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be 5MB or smaller.')
+      return
+    }
+    setUploading(true); setMsg(''); setError('')
+    const formData = new FormData()
+    formData.append('avatar', file)
+    api.members
+      .uploadAvatar(formData)
+      .then(async (d) => {
+        setMember((m) => ({ ...m, avatar_url: d.avatar_url }))
+        await refreshUser()
+        setMsg('Profile picture updated.')
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setUploading(false))
+  }
+
+  const removePhoto = () => {
+    setUploading(true); setMsg(''); setError('')
+    api.members
+      .removeAvatar()
+      .then(async () => {
+        setMember((m) => ({ ...m, avatar_url: null }))
+        await refreshUser()
+        setMsg('Profile picture removed.')
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setUploading(false))
+  }
+
   if (loading) return <Spinner className="py-20" />
   if (!member) return <p className="py-10 text-center text-text-muted">Member not found.</p>
 
@@ -69,11 +112,46 @@ export default function Profile() {
       {/* Header card */}
       <div className="card p-6">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-          <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-card-2 text-2xl font-bold text-accent">
-            {member.avatar_url ? (
-              <img src={member.avatar_url} alt="" className="h-full w-full object-cover" />
-            ) : (
-              `${member.first_name?.[0]}${member.last_name?.[0]}`
+          <div className="relative">
+            <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-card-2 text-2xl font-bold text-accent">
+              {member.avatar_url ? (
+                <img src={member.avatar_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                `${member.first_name?.[0]}${member.last_name?.[0]}`
+              )}
+            </div>
+            {isMe && (
+              <>
+                <button
+                  onClick={onPickPhoto}
+                  disabled={uploading}
+                  title={member.avatar_url ? 'Change profile picture' : 'Add profile picture'}
+                  className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-accent text-white shadow-md transition-transform hover:scale-105 disabled:opacity-60"
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onPhotoSelected}
+                  className="hidden"
+                />
+                {member.avatar_url && (
+                  <button
+                    onClick={removePhoto}
+                    disabled={uploading}
+                    title="Remove profile picture"
+                    className="absolute -left-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-text-muted shadow-md hover:text-danger disabled:opacity-60"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </>
             )}
           </div>
           <div className="flex-1 text-center sm:text-left">

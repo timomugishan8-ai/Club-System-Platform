@@ -32,6 +32,12 @@ const updateProfile = (req, res) => {
 
     const data = req.body;
 
+    // Committee assignment is an admin decision — strip it from self-updates
+    // (admins go through the same endpoint but bypass this via the role check).
+    if (data.committee_id !== undefined && req.user.role_name !== "Admin") {
+        return res.status(403).json({ message: "Only admins can assign committees." });
+    }
+
     // Accept either a bare handle ("octocat", "@octocat") or a full profile
     // URL ("https://github.com/octocat") and store the normalized handle.
     // GitHub handles: alphanumerics + single hyphens, max 39 chars.
@@ -88,14 +94,8 @@ const changePassword = async (req, res) => {
     });
 };
 
-const remove = (req, res) => {
-    if (req.user.role_name !== "Admin") {
-        return res.status(403).json({ message: "Only admins can delete members." });
-    }
-    Member.deleteById(req.params.id, (err) => {
-        if (err) return res.status(500).json({ message: "Failed to delete member." });
-        res.json({ message: "Member deleted." });
-    });
-};
+// Legacy single delete is intentionally not exposed — member deletion goes
+// through the guarded admin flow (DELETE /api/admin/members/:id), which
+// reassigns owned content and cleans up files before removing the row.
 
-module.exports = { list, getMe, getById, updateProfile, changePassword, remove };
+module.exports = { list, getMe, getById, updateProfile, changePassword };

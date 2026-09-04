@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
 import {
@@ -11,7 +11,8 @@ import { useAuth } from '../context/AuthContext'
 export default function Articles() {
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
-  const [selectedId, setSelectedId] = useState(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const selectedId = searchParams.get('article')
 
   useEffect(() => {
     api.articles.published().then((d) => setArticles(d.articles || [])).finally(() => setLoading(false))
@@ -20,7 +21,7 @@ export default function Articles() {
   if (loading) return <Spinner className="py-20" />
 
   if (selectedId) {
-    return <ArticleReader articleId={selectedId} onBack={() => setSelectedId(null)} />
+    return <ArticleReader articleId={selectedId} onBack={() => setSearchParams({})} />
   }
 
   return (
@@ -46,7 +47,7 @@ export default function Articles() {
           {articles.map((a) => (
             <button
               key={a.article_id}
-              onClick={() => setSelectedId(a.article_id)}
+              onClick={() => setSearchParams({ article: a.article_id })}
               className="card overflow-hidden text-left transition-transform hover:scale-[1.02]"
             >
               {a.cover_image ? (

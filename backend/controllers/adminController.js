@@ -1,4 +1,6 @@
 const db = require("../config/db");
+const fs = require("fs");
+const path = require("path");
 const Member = require("../models/Member");
 const { notifyMember } = require("../services/notificationService");
 
@@ -91,7 +93,61 @@ const setRole = (req, res) => {
     );
 };
 
+// Permanently remove a member and their engagement history. The member's own
+// tables cascade (attendance, participation, projects, badges, articles,
+// notifications...). Records they created as content owners (meetings, events,
+// announcements, resources) are handed to the acting admin so the club keeps
+// its history instead of losing rows to FK RESTRICT.
+const removeMember = (req, res) => {
+    const memberId = Number(req.params.id);
+    const adminId = req.user.id;
+
+    if (!memberId) return res.status(400).json({ message: "Invalid member id." });
+    if (memberId === adminId) {
+        return res.status(400).json({ message: "You cannot delete your own account." });
+    }
+
+    db.query(
+        `SELECT m.role_id, r.role_name, m.avatar_url, m.first_name, m.last_name
+         FROM members m JOIN roles r ON m.role_id = r.role_id
+         WHERE m.member_id = ?`,
+        [memberId],
+        (err, rows) => {
+            if (err) return res.status(500).json({ message: "Failed to verify member." });
+            if (results_empty(rows)) return res.status(404).json({ message: "Member not found." });
+            if (Number(rows[0].role_id) === 1) {
+                return res.status(400).json({ message: "The admin account cannot be deleted." });
+            }
+
+            const fullName = `${rows[0].first_name} ${rows[0].last_name}`.trim();
+
+            db.query(
+                `UPDATE meetings SET created_by = ? WHERE created_by = ?`,
+                [adminId, memberId],
+                () => {
+                    db.query(`UPDATE events SET created_by = ? WHERE created_by = ?`, [adminId, memberId], () => {
+                        db.query(`UPDATE announcements SET created_by = ? WHERE created_by = ?`, [adminId, memberId], () => {
+                            db.query(`UPDATE resources SET uploaded_by = ? WHERE uploaded_by = ?`, [adminId, memberId], () => {
+                                Member.deleteById(memberId, (err2, result) => {
+                                    if (err2) return res.status(500).json({ message: "Delete failed." });
+                                    if (!result || result.affectedRows === 0) {
+                                        return res.status(404).json({ message: "Member not found." });
+                                    }
+                                    if (rows[0].avatar_url && rows[0].avatar_url.startsWith("/uploads/avatars/")) {
+                                        fs.unlink(path.join(__dirname, "..", rows[0].avatar_url.replace(/^\/+/, "").replace(/\//g, path.sep)), () => {});
+                                    }
+                                    res.json({ message: `${fullName} has been removed from the chapter.` });
+                                });
+                            });
+                        });
+                    });
+                }
+            );
+        }
+    );
+};
+
 // tiny helper kept local to avoid noise
 const results_empty = (rows) => !rows || rows.length === 0;
 
-module.exports = { listPending, approve, reject, setRole };
+module.exports = { listPending, approve, reject, setRole, removeMember };
