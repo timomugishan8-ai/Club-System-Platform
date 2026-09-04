@@ -8,5 +8,6 @@ const { loadRoleName, requireRole } = require("../middleware/roleMiddleware");
 router.use(verifyToken, loadRoleName, requireRole("Admin"));
 
 router.get("/members-overview", adminOverviewController.getMembersOverview);
+router.get("/my-oversight", adminOverviewController.getMyOversight);
 
 module.exports = router;

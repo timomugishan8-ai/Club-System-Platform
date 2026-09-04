@@ -51,7 +51,6 @@ export default function useSidebarCounts() {
     else if (path === '/events') mark('events')
     else if (path === '/projects') mark('projects')
     else if (path === '/admin/pending') mark('pending')
-    else if (path === '/admin/members') mark('admin/members')
     else if (path === '/admin/articles') mark('admin/articles')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, user])

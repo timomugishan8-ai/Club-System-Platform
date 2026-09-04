@@ -89,7 +89,6 @@ export default function Sidebar({ onCollapse }) {
     '/events': 'events',
     '/projects': 'projects',
     '/admin/pending': 'pending',
-    '/admin/members': 'admin/members',
     '/admin/articles': 'admin/articles',
   }
 

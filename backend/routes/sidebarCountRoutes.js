@@ -53,7 +53,7 @@ router.get("/", verifyToken, loadRoleName, async (req, res) => {
         };
 
         if (req.user.role_name === "Admin") {
-            const [pendingApprovals, reviewArticles, newMembers, activeProjects] =
+            const [pendingApprovals, reviewArticles, activeProjects] =
                 await Promise.all([
                     countQuery(
                         "SELECT COUNT(*) AS c FROM members WHERE approval_status = 'Pending'"
@@ -62,17 +62,12 @@ router.get("/", verifyToken, loadRoleName, async (req, res) => {
                         "SELECT COUNT(*) AS c FROM articles WHERE status = 'Submitted'"
                     ),
                     countQuery(
-                        "SELECT COUNT(*) AS c FROM members WHERE approval_status = 'Approved' AND member_id <> ?",
-                        [memberId]
-                    ),
-                    countQuery(
                         "SELECT COUNT(*) AS c FROM projects WHERE status IN ('Planning','In Progress')"
                     ),
                 ]);
 
             counts.pending = pendingApprovals;
             counts["admin/articles"] = reviewArticles;
-            counts["admin/members"] = newMembers;
             counts.projects = activeProjects;
         } else if (req.user.role_name === "Leader") {
             counts["admin/articles"] = await countQuery(

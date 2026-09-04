@@ -53,4 +53,26 @@ const getMembersOverview = (req, res) => {
     });
 };
 
-module.exports = { getMembersOverview };
+// What THIS admin has personally done on the platform — the admin-side
+// counterpart of member stats. All counts come from "approved_by",
+// "reviewed_by", "awarded_by" columns, so no new tables are needed.
+const getMyOversight = (req, res) => {
+    const adminId = req.user.id;
+    db.query(
+        `SELECT
+            (SELECT COUNT(*) FROM members WHERE approved_by = ? AND approval_status = 'Approved') AS approved_members,
+            (SELECT COUNT(*) FROM members WHERE approved_by = ? AND approval_status = 'Rejected') AS rejected_members,
+            (SELECT COUNT(*) FROM articles WHERE reviewed_by = ? AND status = 'Published') AS articles_published,
+            (SELECT COUNT(*) FROM articles WHERE reviewed_by = ? AND status = 'Rejected') AS articles_rejected,
+            (SELECT COUNT(*) FROM point_adjustments WHERE awarded_by = ?) AS point_adjustments,
+            (SELECT COUNT(*) FROM members WHERE approved_by = ?) AS total_decisions
+        `,
+        [adminId, adminId, adminId, adminId, adminId, adminId],
+        (err, rows) => {
+            if (err) return res.status(500).json({ message: "Failed to load oversight stats." });
+            res.json({ oversight: rows[0] });
+        }
+    );
+};
+
+module.exports = { getMembersOverview, getMyOversight };

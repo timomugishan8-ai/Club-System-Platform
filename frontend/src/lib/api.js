@@ -228,6 +228,7 @@ export const api = {
     approve: (id) => request(`/admin/pending/${id}/approve`, { method: 'POST' }),
     reject: (id) => request(`/admin/pending/${id}/reject`, { method: 'POST' }),
     membersOverview: () => request('/admin/members-overview'),
+    myOversight: () => request('/admin/my-oversight'),
     setRole: (id, role) => request(`/admin/members/${id}/role`, { method: 'PUT', body: { role } }),
     setCommittee: (id, committee_id) => request(`/members/${id}`, { method: 'PUT', body: { committee_id } }),
     removeMember: (id) => request(`/admin/members/${id}`, { method: 'DELETE' }),

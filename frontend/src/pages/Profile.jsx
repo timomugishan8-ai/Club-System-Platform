@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
-import { Mail, Phone, BookOpen, GitBranch, Calendar, User, RefreshCw, Camera, Trash2, Loader2 } from 'lucide-react'
+import { Mail, Phone, BookOpen, GitBranch, Calendar, User, RefreshCw, Camera, Trash2, Loader2, ShieldCheck, Gavel, FileCheck2, FileX2, SlidersHorizontal } from 'lucide-react'
 
 export default function Profile() {
   const { id } = useParams()
@@ -11,6 +11,7 @@ export default function Profile() {
   const targetId = id || user?.member_id
   const isMe = String(targetId) === String(user?.member_id)
   const [member, setMember] = useState(null)
+  const [oversight, setOversight] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [editHandle, setEditHandle] = useState(false)
@@ -25,6 +26,10 @@ export default function Profile() {
       setMember(d.member)
       setHandle(d.member.github_handle || '')
     }).finally(() => setLoading(false))
+    // The neutral admin account gets an oversight panel instead of GitHub stats.
+    if (user?.role_name === 'Admin' && isMe) {
+      api.admin.myOversight().then((d) => setOversight(d.oversight)).catch(() => {})
+    }
   }
 
   useEffect(() => {
@@ -164,8 +169,13 @@ export default function Profile() {
                 {member.committee_name}
               </span>
             )}
+            {member.role_name === 'Admin' && (
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">
+                <ShieldCheck className="h-3.5 w-3.5" /> Neutral oversight account
+              </span>
+            )}
           </div>
-          {isMe && (
+          {isMe && user?.role_name !== 'Admin' && (
             <div className="flex flex-shrink-0 flex-col gap-2">
               <button onClick={refreshStats} disabled={refreshing || !member.github_handle}
                 title={!member.github_handle ? 'Link your GitHub handle first' : 'Fetch latest GitHub stats'}
@@ -197,8 +207,8 @@ export default function Profile() {
         <DetailCard icon={Calendar} label="Joined" value={member.join_date || '—'} />
       </div>
 
-      {/* GitHub link editor */}
-      {isMe && editHandle && (
+      {/* GitHub link editor (hidden for the neutral admin account) */}
+      {isMe && user?.role_name !== 'Admin' && editHandle && (
         <div className="card p-5">
           <h3 className="mb-3 text-sm font-semibold text-text-soft">GitHub Account</h3>
           <form onSubmit={saveHandle} className="space-y-3">
@@ -224,12 +234,49 @@ export default function Profile() {
         </div>
       )}
 
+      {member.role_name === 'Admin' && (
+        <div className="card p-5">
+          <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold text-text">
+            <ShieldCheck className="h-4 w-4 text-accent" /> System Administrator
+          </h3>
+          <p className="mb-4 text-xs text-text-muted">
+            Neutral oversight account — reviews, approves, and manages the platform. Does not earn points,
+            badges, or appear on the leaderboard.
+          </p>
+          {oversight ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              <OversightStat icon={Gavel} label="Members Approved" value={oversight.approved_members} tone="text-positive" />
+              <OversightStat icon={FileX2} label="Signups Rejected" value={oversight.rejected_members} tone="text-danger" />
+              <OversightStat icon={FileCheck2} label="Articles Published" value={oversight.articles_published} tone="text-accent" />
+              <OversightStat icon={FileX2} label="Articles Rejected" value={oversight.articles_rejected} tone="text-danger" />
+              <OversightStat icon={SlidersHorizontal} label="Point Adjustments" value={oversight.point_adjustments} tone="text-amber" />
+            </div>
+          ) : (
+            <p className="text-xs text-text-muted">Loading oversight activity…</p>
+          )}
+        </div>
+      )}
+
       {member.bio && (
         <div className="card p-5">
           <h3 className="mb-2 text-sm font-semibold text-text-soft">Bio</h3>
           <p className="text-sm text-text-muted">{member.bio}</p>
         </div>
       )}
+    </div>
+  )
+}
+
+function OversightStat({ icon: Icon, label, value, tone }) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-card-2 p-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-card">
+        <Icon className={`h-4.5 w-4.5 ${tone}`} />
+      </div>
+      <div className="min-w-0">
+        <div className="text-lg font-bold text-text">{Number(value || 0).toLocaleString()}</div>
+        <div className="truncate text-[11px] text-text-muted">{label}</div>
+      </div>
     </div>
   )
 }
