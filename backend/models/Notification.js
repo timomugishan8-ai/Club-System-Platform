@@ -11,14 +11,21 @@ const Notification = {
 
     createMany: (memberIds, type, title, body, callback) => {
         if (!memberIds || memberIds.length === 0) {
-            return callback(null, { affectedRows: 0 });
+            return callback(null, { affectedRows: 0, insertIds: [] });
         }
         const values = memberIds.map((id) => [id, type, title, body]);
         const sql = `
             INSERT INTO notifications (member_id, type, title, body)
             VALUES ?
         `;
-        db.query(sql, [values], callback);
+        db.query(sql, [values], (err, result) => {
+            if (err) return callback(err);
+            // MySQL bulk insert IDs are contiguous from result.insertId
+            const insertIds = [];
+            const first = result.insertId || 0;
+            for (let i = 0; i < memberIds.length; i++) insertIds.push(first + i);
+            callback(null, { ...result, insertIds });
+        });
     },
 
     findByMember: (memberId, callback) => {

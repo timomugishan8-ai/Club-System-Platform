@@ -141,4 +141,74 @@
   .pill {
     border-radius: var(--radius-pill);
   }
+
+  /* ---- Interactive polish: motion + hover + focus ---- */
+
+  /* Global focus visibility for keyboard users */
+  :focus-visible {
+    outline: 2px solid var(--color-accent-2);
+    outline-offset: 2px;
+  }
+
+  /* All buttons/cards/links ease smoothly instead of snapping */
+  button,
+  a,
+  .card,
+  input,
+  select,
+  textarea {
+    transition: background-color 160ms ease, border-color 160ms ease,
+      color 160ms ease, box-shadow 160ms ease, transform 160ms ease, opacity 160ms ease;
+  }
+
+  /* Primary gradient buttons: brighten + lift on hover */
+  .bg-gradient-accent:hover:not(:disabled) {
+    filter: brightness(1.12) saturate(1.05);
+    box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--color-accent-2) 55%, transparent);
+    transform: translateY(-1px);
+  }
+  .bg-gradient-accent:active:not(:disabled) {
+    filter: brightness(0.96);
+    transform: translateY(0);
+  }
+
+  /* Neutral bordered buttons (hover:bg-card-2 pattern): tint with accent */
+  button:not([class*="bg-gradient-accent"]):hover {
+    /* only when the button itself defines a hover bg via Tailwind */
+  }
+
+  /* Disabled buttons shouldn't animate or lift */
+  button:disabled {
+    cursor: not-allowed;
+  }
+  .bg-gradient-accent:disabled {
+    filter: none;
+    box-shadow: none;
+    transform: none;
+  }
+
+  /* Icon-only ghost buttons: subtle scale feedback */
+  button:hover:has(> svg:only-child) {
+    transform: scale(1.06);
+  }
+
+  /* Cards lift on hover only when they're interactive (contain a button or link) */
+  .card:has(button):hover,
+  .card:has(a):hover {
+    border-color: color-mix(in srgb, var(--color-accent-2) 35%, var(--color-border));
+    box-shadow: 0 6px 20px -8px color-mix(in srgb, var(--color-accent-2) 30%, transparent);
+  }
+
+  /* Sidebar/inline links: consistent underline sweep */
+  a {
+    text-underline-offset: 3px;
+  }
+
+  /* Table rows: gentle background on hover everywhere */
+  tbody tr {
+    transition: background-color 140ms ease;
+  }
+  tbody tr:hover {
+    background-color: color-mix(in srgb, var(--color-accent-2) 6%, transparent);
+  }
 }
