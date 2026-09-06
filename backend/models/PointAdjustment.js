@@ -52,6 +52,26 @@ const PointAdjustment = {
             GROUP BY pillar
         `;
         db.query(sql, [memberId, memberId], callback);
+    },
+
+    // Full per-activity point breakdown across both point sources
+    // (auto-awarded participation + manual adjustments), grouped by pillar.
+    getMemberActivityBreakdown: (memberId, callback) => {
+        const sql = `
+            SELECT
+                pillar,
+                activity,
+                COALESCE(SUM(points), 0) AS total_points,
+                COUNT(*) AS times_awarded
+            FROM (
+                SELECT pillar, activity, points FROM participation WHERE member_id = ?
+                UNION ALL
+                SELECT pillar, activity, points FROM point_adjustments WHERE member_id = ?
+            ) combined
+            GROUP BY pillar, activity
+            ORDER BY pillar, total_points DESC
+        `;
+        db.query(sql, [memberId, memberId], callback);
     }
 };
 

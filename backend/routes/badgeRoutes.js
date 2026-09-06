@@ -7,6 +7,7 @@ const { verifyToken } = require("../middleware/authMiddleware");
 router.use(verifyToken);
 
 router.get("/", badgeController.getAllBadges);
+router.get("/catalog", badgeController.getBadgeCatalog);
 router.get("/me", badgeController.getMyBadges);
 router.get("/me/count", badgeController.getMyBadgeCount);
 router.get("/member/:memberId", badgeController.getMemberBadges);

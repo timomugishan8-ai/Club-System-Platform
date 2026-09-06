@@ -26,9 +26,10 @@ const sql = `
         COALESCE(MAX(gc.issue_count), 0) AS issue_count,
         COALESCE(MAX(gc.repo_count), 0) AS repo_count,
         COALESCE(MAX(gc.star_count), 0) AS star_count,
-        COALESCE(MAX(gc.fetched_at), NULL) AS github_fetched_at,
+        -- Stars are recognition from others, not effort: capped at 50 so a
+        -- linked famous repo can't flood the score
         COALESCE(MAX(gc.commit_count), 0) + COALESCE(MAX(gc.pr_count), 0) + COALESCE(MAX(gc.issue_count), 0)
-            + COALESCE(MAX(gc.repo_count), 0) + COALESCE(MAX(gc.star_count), 0) AS github_score,
+            + COALESCE(MAX(gc.repo_count), 0) + LEAST(COALESCE(MAX(gc.star_count), 0), 50) AS github_score,
         COUNT(DISTINCT a.attendance_id) AS meetings_attended,
         COALESCE(ROUND(SUM(a.status IN ('Present', 'Late')) / NULLIF(COUNT(DISTINCT a.attendance_id), 0) * 100, 1), 0) AS attendance_rate,
         SUM(a.status = 'Present') AS present_count,

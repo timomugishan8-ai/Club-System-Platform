@@ -57,6 +57,21 @@ const Attendance = {
         db.query(sql, [meetingId], callback);
     },
 
+    // Single record for one member at one meeting (UNIQUE(meeting_id, member_id))
+    findByMeetingAndMember: (meetingId, memberId, callback) => {
+        db.query(
+            `SELECT attendance_id, status, check_in_time, remarks
+             FROM attendance
+             WHERE meeting_id = ? AND member_id = ?
+             LIMIT 1`,
+            [meetingId, memberId],
+            (err, rows) => {
+                if (err) return callback(err);
+                callback(null, rows[0] || null);
+            }
+        );
+    },
+
     findByMember: (memberId, callback) => {
         const sql = `
             SELECT

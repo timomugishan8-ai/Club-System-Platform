@@ -157,7 +157,7 @@ const getAnalytics = (req, res) => {
         SELECT
             m.member_id, m.first_name, m.last_name, m.avatar_url,
             COALESCE(SUM(p.points), 0) AS points,
-            COALESCE((SELECT SUM(gc.commit_count + gc.pr_count + gc.issue_count + gc.repo_count + gc.star_count)
+            COALESCE((SELECT SUM(gc.commit_count + gc.pr_count + gc.issue_count + gc.repo_count + LEAST(gc.star_count, 50))
                       FROM github_contributions gc WHERE gc.member_id = m.member_id), 0) AS github_score
         FROM members m
         LEFT JOIN participation p ON m.member_id = p.member_id

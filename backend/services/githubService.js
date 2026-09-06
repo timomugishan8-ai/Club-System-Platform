@@ -77,7 +77,7 @@ const fetchUserEvents = async (handle) => {
 
 const aggregateStats = (repos, events) => {
     let commitCount = 0;
-    const prKeys = new Set();
+    const mergedPrKeys = new Set();
     const issueKeys = new Set();
 
     for (const event of events) {
@@ -86,26 +86,30 @@ const aggregateStats = (repos, events) => {
             // payload.commits is capped at 20 per push; payload.size carries the true total.
             commitCount += payload.size || (payload.commits ? payload.commits.length : 0);
         } else if (event.type === "PullRequestEvent") {
-            // Deduplicate: one PR fires many events (opened, closed, synchronized, ...).
+            // Stricter scoring: only MERGED PRs count. Opening a PR is a
+            // proposal; merging means it was reviewed and accepted. One PR
+            // fires many events — deduplicate by repo + number.
             const pr = payload.pull_request;
-            if (pr) prKeys.add(`${event.repo ? event.repo.id : "r"}:${pr.number}`);
+            if (pr && payload.action === "closed" && pr.merged) {
+                mergedPrKeys.add(`${event.repo ? event.repo.id : "r"}:${pr.number}`);
+            }
         } else if (event.type === "IssuesEvent") {
             const issue = payload.issue;
             if (issue) issueKeys.add(`${event.repo ? event.repo.id : "r"}:${issue.number}`);
         }
     }
 
-    const prCount = prKeys.size;
-    const issueCount = issueKeys.size;
-
-    const repoCount = repos.length;
-    const starCount = repos.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
+    // Forks are copies of other people's work: excluded from repo and star
+    // counts (they still appear in the member's repository list).
+    const ownRepos = repos.filter((r) => !r.fork);
+    const repoCount = ownRepos.length;
+    const starCount = ownRepos.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
 
     return {
         repo_count: repoCount,
         commit_count: commitCount,
-        pr_count: prCount,
-        issue_count: issueCount,
+        pr_count: mergedPrKeys.size,
+        issue_count: issueKeys.size,
         star_count: starCount,
         streak_days: 0
     };
@@ -144,6 +148,9 @@ const fetchContributionCalendar = async (handle) => {
                     totalPullRequestContributions
                     totalIssueContributions
                 }
+                pullRequests(first: 1, states: MERGED) {
+                    totalCount
+                }
             }
         }
     `;
@@ -176,7 +183,10 @@ const fetchContributionCalendar = async (handle) => {
                 commit_count: calendar.totalContributions
                     ? cc.totalCommitContributions || 0
                     : 0,
-                pr_count: cc.totalPullRequestContributions || 0,
+                // Stricter scoring: only merged PRs earn score
+                pr_count: (data.data.user.pullRequests?.totalCount != null)
+                    ? data.data.user.pullRequests.totalCount
+                    : (cc.totalPullRequestContributions || 0),
                 issue_count: cc.totalIssueContributions || 0,
                 contributions_total: calendar.totalContributions || 0
             }
@@ -337,4 +347,4 @@ const startNightlyRefresh = ({ hour = 3 } = {}) => {
     return { stop: () => clearInterval(timer) };
 };
 
-module.exports = { refreshForMember, refreshAllMembers, startNightlyRefresh };
+module.exports = { refreshForMember, refreshAllMembers, startNightlyRefresh, aggregateStatsForTest: aggregateStats };

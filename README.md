@@ -10,6 +10,7 @@ A web-based system for tracking attendance, participation, GitHub contributions,
 - **Progress** — points + attendance + GitHub score → 6 tiers (Rookie → Diamond); admins see "Chapter Member Progress" with expandable per-member detail
 - **GitHub Projects** — unified per-member view merging GitHub repositories (stars, forks, language, last push) with club project assignments; reviewers comment on projects
 - **Attendance** — per-meeting records, bulk record, personal stats; admins/leaders see all members' records
+- **QR check-in** — admins/leaders display a per-meeting QR code at the entrance; members scan → auto Present (within grace window) or Late, with a live check-in tally on the display screen
 - **Leaderboard** — ranked members with tier badges
 - **Announcements** — admin-only posts, fan-out email + in-app notifications
 - **Articles** — members upload drafts → submit for review → admin/leader approves/rejects with feedback → published feed; admin cannot create articles
@@ -126,6 +127,7 @@ All endpoints under `/api`:
 | `/committees` | list (any member), create (Admin); members assigned via `/members/:id` `committee_id` (Admin) |
 | `/meetings` | CRUD + upcoming |
 | `/attendance` | record, bulk, by-meeting, by-member, stats, all (Admin/Leader) |
+| `/qr` | preview/:token (public), check-in (member), meeting/:id/token + rotate (Admin/Leader) |
 | `/participation` | types, record, by-meeting, points |
 | `/events` | CRUD + upcoming + register/unregister |
 | `/projects` | CRUD + members + comments + overview-by-member |
@@ -134,6 +136,7 @@ All endpoints under `/api`:
 | `/articles` | upload/submit drafts (Member/Leader), review queue (Admin/Leader), like/comment |
 | `/github` | stats, activity, repositories, refresh (me + member) |
 | `/leaderboard` | all, my-progress, my-dashboard, admin/dashboard, member/:id/progress |
+| `/badges` | all, catalog (criteria + how-to-earn + live progress), me, member/:id |
 | `/system-settings` | tier thresholds + weights (Admin read/write) |
 | `/sidebar-counts` | per-section badge counts |
 | `/notifications` | list, unread, mark-read |
@@ -159,9 +162,9 @@ All endpoints under `/api`:
 
 ## Status
 
-- Backend: complete — 5-pillar point system, 10 badges, 6 tiers, GitHub GraphQL integration, role management, project comments, article review
-- Frontend: complete — member dashboard + unique admin dashboard, chapter member progress, unified GitHub Projects view, article review queue, analytics, semester reports
-- Testing: 21 Jest tests covering point awards (attendance, streaks, projects, GitHub top-up, articles) and badge rules
+- Backend: complete — 5-pillar point system, 10 badges, 6 tiers, GitHub integration (GraphQL + REST, merged-PRs-only scoring, fork exclusion, star cap), role management, project comments, article review, QR meeting check-in (Present/Late auto-detection, first-record-wins re-scan safety, live tally, code rotation), badge catalog with how-to-earn guides and live progress
+- Frontend: complete — member dashboard + unique admin dashboard, chapter member progress with per-activity points breakdown, unified GitHub Projects view, article review queue, analytics, semester reports, QR check-in display (printable poster) + member scan page, badge guide modal with progress bars
+- Testing: 31 Jest tests covering point awards (attendance, streaks, projects, GitHub top-up, articles), strict GitHub scoring (forks excluded, merged PRs only, deduplication), and QR check-in (grace window, day validation, token rejection, re-scan safety)
 - Next: end-to-end tests, notification preferences polish
 
 ## Testing
@@ -174,7 +177,7 @@ npm install          # dev dependencies include jest + supertest
 npm test
 ```
 
-The test suite covers the point service (attendance, streak, project, GitHub top-up, article awards, admin neutrality) and badge rules.
+The test suite covers the point service (attendance, streak, project, GitHub top-up, article awards, admin neutrality), the strict GitHub scoring aggregation (fork exclusion, merged-PR-only, event deduplication), and the QR check-in service (grace window, day validation, token rejection, first-record-wins re-scan safety).
 
 ## Security Notes
 

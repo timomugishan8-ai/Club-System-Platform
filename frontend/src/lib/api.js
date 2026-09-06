@@ -271,6 +271,7 @@ export const api = {
   // Badges
   badges: {
     all: () => request('/badges'),
+    catalog: () => request('/badges/catalog'),
     mine: () => request('/badges/me'),
     myCount: () => request('/badges/me/count'),
     byMember: (id) => request(`/badges/member/${id}`),
@@ -287,5 +288,13 @@ export const api = {
     byMember: (id) => request(`/point-adjustments/member/${id}`),
     create: (body) => request('/point-adjustments', { method: 'POST', body }),
     remove: (id) => request(`/point-adjustments/${id}`, { method: 'DELETE' }),
+  },
+
+  // QR check-in
+  qr: {
+    preview: (token) => request(`/qr/preview/${encodeURIComponent(token)}`),
+    checkIn: (token) => request('/qr/check-in', { method: 'POST', body: { token } }),
+    getToken: (meetingId) => request(`/qr/meeting/${meetingId}/token`),
+    rotate: (meetingId) => request(`/qr/meeting/${meetingId}/rotate`, { method: 'POST' }),
   },
 }

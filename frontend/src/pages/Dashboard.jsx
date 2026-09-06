@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Users, GraduationCap, ClipboardCheck,   Trophy, ChevronRight,
-  GitBranch, Calendar, Megaphone, Award, Flame, Lock,
+  GitBranch, Calendar, Megaphone, Award, Flame,
 
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
 import GitHubHeatmap from '../components/GitHubHeatmap'
+import BadgeIcon from '../components/BadgeIcon'
 import AdminDashboard from './AdminDashboard'
 
 export default function Dashboard() {
@@ -270,9 +271,9 @@ export default function Dashboard() {
                     style={{ background: earned ? badge.color + '20' : 'var(--color-card-2)' }}
                   >
                     {earned ? (
-                      <Award className="h-6 w-6" style={{ color: badge.color }} />
+                      <BadgeIcon icon={badge.icon} color={badge.color} size="h-6 w-6" />
                     ) : (
-                      <Lock className="h-5 w-5 text-text-muted" />
+                      <BadgeIcon icon={badge.icon} color={badge.color} size="h-6 w-6" earned={false} />
                     )}
                   </div>
                   <span className={`text-center text-[10px] leading-tight ${earned ? 'text-text-soft' : 'text-text-muted'}`}>

@@ -107,6 +107,7 @@ export default function Settings() {
                 ['tier_diamond_min', 'Diamond min score'],
                 ['github_weight', 'GitHub weight'],
                 ['attendance_weight', 'Attendance weight'],
+                ['late_grace_minutes', 'Late grace (min)'],
               ].map(([key, label]) => (
                 <Field key={key} label={key.endsWith('_weight') ? label : label} type="number" step="any"
                   value={sysSettings[key] ?? ''}
@@ -115,6 +116,7 @@ export default function Settings() {
             </div>
             <p className="text-xs text-text-muted">
               Tier thresholds and scoring weights apply across leaderboards, progress pages, and analytics.
+              "Late grace" is how many minutes after a meeting's start time a QR check-in still counts as Present (after that, Late).
             </p>
             <button type="submit"
               className="rounded-lg bg-gradient-accent px-4 py-2 text-sm font-semibold text-white">

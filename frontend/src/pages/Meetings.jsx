@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
+import { formatDate, formatTime } from '../lib/format'
 import Spinner from '../components/Spinner'
 import { useAuth } from '../context/AuthContext'
 import {
   Calendar, Plus, X, ChevronLeft, Check, Clock, XCircle,
-  MinusCircle, Save, Trash2, Pencil,
+  MinusCircle, Save, Trash2, Pencil, QrCode,
 } from 'lucide-react'
 
 const STATUSES = ['Present', 'Late', 'Absent', 'Excused']
@@ -17,6 +19,7 @@ const statusStyles = {
 
 export default function Meetings() {
   const { isAdmin, isLeader } = useAuth()
+  const navigate = useNavigate()
   const canManage = isAdmin || isLeader
   const [meetings, setMeetings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -105,11 +108,16 @@ export default function Meetings() {
                   {m.topic && <p className="truncate text-sm text-text-muted">{m.topic}</p>}
                   <div className="mt-0.5 flex items-center gap-3 text-xs text-text-muted">
                     {m.venue && <span>{m.venue}</span>}
-                    {m.start_time && <span>{m.start_time?.slice(0, 5)}{m.end_time ? `–${m.end_time.slice(0, 5)}` : ''}</span>}
+                    {m.start_time && <span>{formatTime(m.start_time)}{m.end_time ? `–${formatTime(m.end_time)}` : ''}</span>}
                     <span>by {m.created_by_name || 'Unknown'}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
+                  <button onClick={() => navigate(`/meetings/${m.meeting_id}/qr`)}
+                    title="QR check-in"
+                    className="flex items-center gap-1.5 rounded-lg bg-card-2 px-3 py-1.5 text-xs text-text-soft hover:bg-border">
+                    <QrCode className="h-3.5 w-3.5" /> QR
+                  </button>
                   <button onClick={() => setSelectedId(m.meeting_id)}
                     className="rounded-lg bg-card-2 px-3 py-1.5 text-xs text-text-soft hover:bg-border">
                     Take Attendance
@@ -250,9 +258,9 @@ function AttendanceSheet({ meetingId, onBack, canManage }) {
         <h1 className="text-xl font-bold text-text">{meeting.title}</h1>
         {meeting.topic && <p className="mt-0.5 text-sm text-text-muted">{meeting.topic}</p>}
         <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-text-muted">
-          <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {meeting.meeting_date}</span>
+          <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {formatDate(meeting.meeting_date)}</span>
           {meeting.venue && <span>{meeting.venue}</span>}
-          {meeting.start_time && <span>{meeting.start_time?.slice(0,5)}{meeting.end_time ? `–${meeting.end_time.slice(0,5)}` : ''}</span>}
+          {meeting.start_time && <span>{formatTime(meeting.start_time)}{meeting.end_time ? `–${formatTime(meeting.end_time)}` : ''}</span>}
         </div>
       </div>
 

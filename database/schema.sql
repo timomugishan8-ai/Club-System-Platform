@@ -137,6 +137,30 @@ CREATE TABLE attendance (
 );
 
 -- -------------------------------------------
+-- QR check-in tokens (one active per meeting)
+-- -------------------------------------------
+CREATE TABLE meeting_qr_tokens (
+    qr_token_id  INT AUTO_INCREMENT PRIMARY KEY,
+    meeting_id   INT NOT NULL,
+    token        CHAR(36) NOT NULL,
+    is_active    BOOLEAN DEFAULT TRUE,
+    expires_at   TIMESTAMP NULL,
+    created_by   INT NOT NULL,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (meeting_id)
+        REFERENCES meetings(meeting_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (created_by)
+        REFERENCES members(member_id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    UNIQUE (token),
+    UNIQUE (meeting_id, is_active)
+);
+
+-- -------------------------------------------
 -- Participation types (point catalog)
 -- -------------------------------------------
 CREATE TABLE participation_types (
@@ -530,6 +554,7 @@ CREATE INDEX idx_member_email        ON members(email);
 CREATE INDEX idx_member_github       ON members(github_handle);
 CREATE INDEX idx_member_approval     ON members(approval_status);
 CREATE INDEX idx_meeting_date        ON meetings(meeting_date);
+CREATE INDEX idx_qr_token_meeting    ON meeting_qr_tokens(meeting_id);
 CREATE INDEX idx_attendance_member   ON attendance(member_id);
 CREATE INDEX idx_participation_member ON participation(member_id);
 CREATE INDEX idx_member_roles_member ON member_roles(member_id);

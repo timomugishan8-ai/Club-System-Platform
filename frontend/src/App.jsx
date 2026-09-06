@@ -24,6 +24,8 @@ import MyArticles from './pages/MyArticles'
 import ArticleReview from './pages/ArticleReview'
 import Reports from './pages/Reports'
 import AdminMembers from './pages/AdminMembers'
+import CheckIn from './pages/CheckIn'
+import QRDisplay from './pages/QRDisplay'
 
 export default function App() {
   return (
@@ -35,6 +37,7 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/check-in" element={<CheckIn />} />
 
           {/* Protected */}
           <Route
@@ -94,6 +97,14 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['Admin', 'Leader']}>
                   <ArticleReview />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meetings/:meetingId/qr"
+              element={
+                <ProtectedRoute roles={['Admin', 'Leader']}>
+                  <QRDisplay />
                 </ProtectedRoute>
               }
             />

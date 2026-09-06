@@ -9,7 +9,12 @@ export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = location.state?.from?.pathname || '/'
+  const rawFrom = location.state?.from?.pathname || '/'
+  // Preserve query strings (e.g. /check-in?token=…) so a QR scan that
+  // bounced through login still lands on the right check-in page.
+  const from = location.state?.from?.search
+    ? `${location.state.from.pathname}${location.state.from.search}`
+    : rawFrom
 
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)

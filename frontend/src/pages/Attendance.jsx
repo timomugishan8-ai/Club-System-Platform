@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
+import { formatDate, formatTime } from '../lib/format'
 import Spinner from '../components/Spinner'
 import { useAuth } from '../context/AuthContext'
 import { Check, Clock, X, MinusCircle, Users } from 'lucide-react'
@@ -94,13 +95,13 @@ export default function Attendance() {
                         </Link>
                       </td>
                       <td className="px-4 py-3 text-text">{r.title}</td>
-                      <td className="px-4 py-3 text-text-muted">{r.meeting_date}</td>
+                      <td className="px-4 py-3 text-text-muted">{formatDate(r.meeting_date)}</td>
                       <td className="px-4 py-3">
                         <span className={`flex items-center gap-1.5 ${statusIcons[r.status]?.color || 'text-text-muted'}`}>
                           <Icon className="h-4 w-4" /> {r.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-text-muted">{r.check_in_time || '—'}</td>
+                      <td className="px-4 py-3 text-text-muted">{formatTime(r.check_in_time)}</td>
                     </tr>
                   )
                 })}
@@ -146,13 +147,13 @@ export default function Attendance() {
                 return (
                   <tr key={r.attendance_id} className="border-b border-border last:border-0">
                     <td className="px-4 py-3 text-text">{r.title}</td>
-                    <td className="px-4 py-3 text-text-muted">{r.meeting_date}</td>
+                    <td className="px-4 py-3 text-text-muted">{formatDate(r.meeting_date)}</td>
                     <td className="px-4 py-3">
                       <span className={`flex items-center gap-1.5 ${statusIcons[r.status]?.color || 'text-text-muted'}`}>
                         <Icon className="h-4 w-4" /> {r.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-text-muted">{r.check_in_time || '—'}</td>
+                    <td className="px-4 py-3 text-text-muted">{formatTime(r.check_in_time)}</td>
                   </tr>
                 )
               })}

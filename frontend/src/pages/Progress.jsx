@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import Spinner from '../components/Spinner'
+import BadgeCatalogModal from '../components/BadgeCatalogModal'
+import BadgeIcon from '../components/BadgeIcon'
 import GitHubHeatmap from '../components/GitHubHeatmap'
 import { useAuth } from '../context/AuthContext'
-import { Award, TrendingUp, GitBranch, CalendarCheck, Trophy, Lock, ChevronDown, ChevronRight } from 'lucide-react'
+import { Award, TrendingUp, GitBranch, CalendarCheck, Trophy, ChevronDown, ChevronRight, HelpCircle } from 'lucide-react'
 
 const TIERS = [
   { name: 'Diamond',     color: '#06B6D4' },
@@ -33,8 +35,10 @@ export default function Progress() {
   const [allBadges, setAllBadges] = useState([])
   const [myBadges, setMyBadges] = useState([])
   const [members, setMembers] = useState([])
-  const [openDetailId, setOpenDetailId] = useState(null)
-  const [detail, setDetail] = useState(null)
+  const [openIds, setOpenIds] = useState(() => new Set())
+  const [details, setDetails] = useState({})
+  const [loadingIds, setLoadingIds] = useState(() => new Set())
+  const [showBadgeGuide, setShowBadgeGuide] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -65,14 +69,49 @@ export default function Progress() {
     })
   }, [isAdmin])
 
-  // Load a member's full progress detail when their snippet is expanded
+  // Load a member's full progress detail when their row expands. Multiple
+  // rows can be open at once; details cache per member.
   const toggleDetail = (memberId) => {
-    if (openDetailId === memberId) { setOpenDetailId(null); setDetail(null); return }
-    setOpenDetailId(memberId)
-    setDetail(null)
-    api.leaderboard.memberProgress(memberId)
-      .then((d) => setDetail({ progress: d.progress || null }))
-      .catch(() => setDetail({ progress: null }))
+    setOpenIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(memberId)) {
+        next.delete(memberId)
+      } else {
+        next.add(memberId)
+        if (!details[memberId]) {
+          setLoadingIds((s) => new Set(s).add(memberId))
+          api.leaderboard.memberProgress(memberId)
+            .then((d) => setDetails((prevD) => ({ ...prevD, [memberId]: d.progress || null })))
+            .catch(() => setDetails((prevD) => ({ ...prevD, [memberId]: null })))
+            .finally(() => setLoadingIds((s) => {
+              const n = new Set(s); n.delete(memberId); return n
+            }))
+        }
+      }
+      return next
+    })
+  }
+
+  const allOpen = members.length > 0 && members.every((m) => openIds.has(m.member_id))
+
+  const toggleAll = () => {
+    if (allOpen) {
+      setOpenIds(new Set())
+      return
+    }
+    // Open every row and fetch any missing details
+    setOpenIds(new Set(members.map((m) => m.member_id)))
+    members.forEach((m) => {
+      if (!details[m.member_id]) {
+        setLoadingIds((s) => new Set(s).add(m.member_id))
+        api.leaderboard.memberProgress(m.member_id)
+          .then((d) => setDetails((prevD) => ({ ...prevD, [m.member_id]: d.progress || null })))
+          .catch(() => setDetails((prevD) => ({ ...prevD, [m.member_id]: null })))
+          .finally(() => setLoadingIds((s) => {
+            const n = new Set(s); n.delete(m.member_id); return n
+          }))
+      }
+    })
   }
 
   if (loading) return <Spinner className="py-20" />
@@ -84,14 +123,30 @@ export default function Progress() {
         <div>
           <h1 className="text-xl font-bold text-text">Chapter Member Progress</h1>
           <p className="text-sm text-text-muted">
-            Progress overview for every chapter member — click a member to expand their details.
+            Progress overview for every chapter member — expand a row for their full points breakdown.
           </p>
         </div>
 
         <div className="card p-5">
+          <div className="mb-2 flex justify-end">
+            <button onClick={() => setShowBadgeGuide(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1 text-xs text-text-soft hover:bg-card-2">
+              <HelpCircle className="h-3.5 w-3.5" /> Badge guide
+            </button>
+          </div>
+          {members.length > 0 && (
+            <div className="mb-2 flex justify-end">
+              <button onClick={toggleAll}
+                className="rounded-lg border border-border px-3 py-1 text-xs text-text-soft hover:bg-card-2">
+                {allOpen ? 'Collapse all' : 'Expand all'}
+              </button>
+            </div>
+          )}
           <div className="space-y-2">
             {members.map((m) => {
-              const open = openDetailId === m.member_id
+              const open = openIds.has(m.member_id)
+              const memberDetail = details[m.member_id]
+              const isLoading = loadingIds.has(m.member_id)
               return (
                 <div key={m.member_id} className="rounded-lg border border-border">
                   <button
@@ -115,9 +170,9 @@ export default function Progress() {
                   </button>
                   {open && (
                     <div className="border-t border-border p-4">
-                      {!detail && <p className="text-sm text-text-muted">Loading details…</p>}
-                      {detail?.progress && <MemberProgressDetail progress={detail.progress} />}
-                      {detail && !detail.progress && <p className="text-sm text-text-muted">No progress data.</p>}
+                      {isLoading && <p className="text-sm text-text-muted">Loading details…</p>}
+                      {!isLoading && memberDetail && <MemberProgressDetail progress={memberDetail} />}
+                      {!isLoading && !memberDetail && <p className="text-sm text-text-muted">No progress data.</p>}
                     </div>
                   )}
                 </div>
@@ -128,6 +183,7 @@ export default function Progress() {
             )}
           </div>
         </div>
+        {showBadgeGuide && <BadgeCatalogModal onClose={() => setShowBadgeGuide(false)} />}
       </div>
     )
   }
@@ -209,7 +265,15 @@ export default function Progress() {
 
       {/* Badges grid */}
       <div className="card p-5">
-        <h3 className="mb-4 text-sm font-semibold text-text-soft">Badge Collection</h3>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-text-soft">Badge Collection</h3>
+          <button
+            onClick={() => setShowBadgeGuide(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-text-soft hover:bg-card-2"
+          >
+            <HelpCircle className="h-3.5 w-3.5" /> How to earn badges
+          </button>
+        </div>
         <div className="grid grid-cols-3 gap-4 sm:grid-cols-5 lg:grid-cols-10">
           {allBadges.map((badge) => {
             const earned = myBadges.some((b) => b.badge_id === badge.badge_id)
@@ -224,9 +288,9 @@ export default function Progress() {
                   title={badge.description}
                 >
                   {earned ? (
-                    <Award className="h-7 w-7" style={{ color: badge.color }} />
+                    <BadgeIcon icon={badge.icon} color={badge.color} size="h-7 w-7" />
                   ) : (
-                    <Lock className="h-6 w-6 text-text-muted" />
+                    <BadgeIcon icon={badge.icon} color={badge.color} size="h-7 w-7" earned={false} />
                   )}
                 </div>
                 <span className={`text-center text-[10px] leading-tight ${earned ? 'text-text-soft' : 'text-text-muted'}`}>
@@ -281,6 +345,8 @@ export default function Progress() {
           <GitHubHeatmap activity={activity} />
         </div>
       )}
+
+      {showBadgeGuide && <BadgeCatalogModal onClose={() => setShowBadgeGuide(false)} />}
     </div>
   )
 }
@@ -298,6 +364,7 @@ function TierBadge({ tier }) {
 function MemberProgressDetail({ progress }) {
   const tc = tierColor(progress.tier)
   const pillarPoints = progress.pillar_points || {}
+  const activityBreakdown = progress.activity_breakdown || {}
   const totalPillarPoints = PILLARS.reduce((sum, p) => sum + (pillarPoints[p.key] || 0), 0)
   return (
     <div className="space-y-4">
@@ -312,10 +379,11 @@ function MemberProgressDetail({ progress }) {
         </div>
       </div>
       {totalPillarPoints > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {PILLARS.map((pillar) => {
             const pts = pillarPoints[pillar.key] || 0
             const pct = totalPillarPoints > 0 ? (pts / totalPillarPoints) * 100 : 0
+            const activities = activityBreakdown[pillar.key] || []
             return (
               <div key={pillar.key}>
                 <div className="mb-1 flex justify-between text-xs">
@@ -325,9 +393,36 @@ function MemberProgressDetail({ progress }) {
                 <div className="h-1.5 overflow-hidden rounded-full bg-card-2">
                   <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: pillar.color }} />
                 </div>
+                {activities.length > 0 && (
+                  <div className="mt-1.5 space-y-0.5 pl-3">
+                    {activities.map((a) => (
+                      <div key={a.activity} className="flex justify-between text-[11px]">
+                        <span className="truncate text-text-muted">
+                          {a.activity}
+                          {a.times_awarded > 1 && <span className="text-text-soft"> × {a.times_awarded}</span>}
+                        </span>
+                        <span className="ml-2 shrink-0 text-text-soft">{a.total_points} pts</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )
           })}
+          {/* Catch-all: pillars with no explicit activity list still show a row */}
+          {Object.entries(activityBreakdown)
+            .filter(([pillar]) => !PILLARS.some((p) => p.key === pillar))
+            .map(([pillar, activities]) => (
+              <div key={pillar} className="border-t border-border pt-2">
+                <div className="mb-1 text-xs font-medium text-text-soft">{pillar}</div>
+                {activities.map((a) => (
+                  <div key={a.activity} className="flex justify-between text-[11px]">
+                    <span className="text-text-muted">{a.activity}</span>
+                    <span className="text-text-soft">{a.total_points} pts</span>
+                  </div>
+                ))}
+              </div>
+            ))}
         </div>
       )}
     </div>

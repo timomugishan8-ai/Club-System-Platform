@@ -10,6 +10,19 @@ const TIERS = [
     { key: "tier_rookie_min",      name: "Rookie",      color: "#6B7280" }
 ];
 
+// MySQL DECIMAL aggregates (SUM/ROUND) arrive as strings; coerce before
+// arithmetic so totals add numerically instead of concatenating
+// ("0" + 258533 -> "02585330").
+const toNum = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+};
+
+// Stars are recognition from others, not member effort — one popular repo
+// would otherwise flood the score (e.g. linking a 258k-star account).
+// They contribute, capped at 50.
+const STAR_CAP = 50;
+
 const assignTier = (score, cfg) => {
     for (const t of TIERS) {
         const threshold = parseInt(cfg[t.key], 10);
@@ -29,11 +42,11 @@ const getLeaderboard = (req, res) => {
             m.avatar_url,
             m.github_handle,
             COALESCE(SUM(p.points), 0) AS total_points,
-            COALESCE(MAX(gc.commit_count), 0)
-                + COALESCE(MAX(gc.pr_count), 0)
-                + COALESCE(MAX(gc.issue_count), 0)
-                + COALESCE(MAX(gc.repo_count), 0)
-                + COALESCE(MAX(gc.star_count), 0) AS github_score,
+            COALESCE(MAX(gc.commit_count), 0) AS commit_count,
+            COALESCE(MAX(gc.pr_count), 0) AS pr_count,
+            COALESCE(MAX(gc.issue_count), 0) AS issue_count,
+            COALESCE(MAX(gc.repo_count), 0) AS repo_count,
+            COALESCE(MAX(gc.star_count), 0) AS star_count,
             CASE
                 WHEN COUNT(a.attendance_id) = 0 THEN 0
                 ELSE ROUND(
@@ -49,7 +62,6 @@ const getLeaderboard = (req, res) => {
             AND m.is_active = TRUE
             AND m.role_id != 1
         GROUP BY m.member_id
-        ORDER BY total_points DESC, github_score DESC, attendance_rate DESC
     `;
 
     db.query(sql, (err, results) => {
@@ -71,9 +83,14 @@ const getLeaderboard = (req, res) => {
                 const attendanceWeight = parseFloat(cfg.attendance_weight) || 0;
 
                 const ranked = results.map((row, index) => {
-                    const githubPoints = Math.round(row.github_score * githubWeight);
-                    const attendancePoints = Math.round((row.attendance_rate / 100) * attendanceWeight);
-                    const progressScore = row.total_points + githubPoints + attendancePoints;
+                    const stars = Math.min(toNum(row.star_count), STAR_CAP);
+                    // Repos + commits + PRs + issues, stars capped (they're
+                    // recognition from others, not member effort)
+                    const githubScore = toNum(row.repo_count) + toNum(row.commit_count)
+                        + toNum(row.pr_count) + toNum(row.issue_count) + stars;
+                    const githubPoints = Math.round(githubScore * githubWeight);
+                    const attendancePoints = Math.round((toNum(row.attendance_rate) / 100) * attendanceWeight);
+                    const progressScore = toNum(row.total_points) + githubPoints + attendancePoints;
 
                     return {
                         rank: index + 1,
@@ -82,8 +99,8 @@ const getLeaderboard = (req, res) => {
                         last_name: row.last_name,
                         avatar_url: row.avatar_url,
                         github_handle: row.github_handle,
-                        total_points: row.total_points,
-                        github_score: row.github_score,
+                        total_points: toNum(row.total_points),
+                        github_score: githubScore,
                         attendance_rate: row.attendance_rate,
                         github_points: githubPoints,
                         attendance_points: attendancePoints,
@@ -91,6 +108,15 @@ const getLeaderboard = (req, res) => {
                         tier: assignTier(progressScore, cfg)
                     };
                 });
+
+                // Rank in JS: github_score is computed with the star cap,
+                // which SQL can't see
+                ranked.sort((a, b) =>
+                    b.progress_score - a.progress_score
+                    || b.github_score - a.github_score
+                    || (toNum(b.attendance_rate) - toNum(a.attendance_rate))
+                );
+                ranked.forEach((r, i) => { r.rank = i + 1; });
 
                 const tiers = {};
                 TIERS.forEach((t) => {
@@ -117,8 +143,10 @@ const buildMemberProgress = (memberId, callback) => {
         SELECT
             m.member_id, m.first_name, m.last_name,
             COALESCE(SUM(p.points), 0) AS total_points,
-            (SELECT COALESCE(SUM(commit_count + pr_count + issue_count + repo_count + star_count), 0)
-             FROM github_contributions WHERE member_id = m.member_id) AS github_score,
+            (SELECT COALESCE(SUM(commit_count + pr_count + issue_count + repo_count), 0)
+             FROM github_contributions WHERE member_id = m.member_id) AS github_core,
+            (SELECT COALESCE(SUM(star_count), 0)
+             FROM github_contributions WHERE member_id = m.member_id) AS star_count_raw,
             CASE
                 WHEN (SELECT COUNT(*) FROM attendance WHERE member_id = m.member_id) = 0 THEN 0
                 ELSE ROUND(
@@ -153,9 +181,11 @@ const buildMemberProgress = (memberId, callback) => {
                 settings.forEach((s) => { cfg[s.setting_key] = s.setting_value; });
                 const githubWeight = parseFloat(cfg.github_weight) || 1;
                 const attendanceWeight = parseFloat(cfg.attendance_weight) || 0;
-                const githubPoints = Math.round(row.github_score * githubWeight);
-                const attendancePoints = Math.round((row.attendance_rate / 100) * attendanceWeight);
-                const progressScore = row.total_points + githubPoints + attendancePoints;
+                const githubScore = toNum(row.github_core) + Math.min(toNum(row.star_count_raw), STAR_CAP);
+                const githubPoints = Math.round(githubScore * githubWeight);
+                const attendancePoints = Math.round((toNum(row.attendance_rate) / 100) * attendanceWeight);
+                const totalPoints = toNum(row.total_points);
+                const progressScore = totalPoints + githubPoints + attendancePoints;
 
                 const tierName = assignTier(progressScore, cfg);
                 const tierIndex = TIERS.findIndex((t) => t.name === tierName);
@@ -181,15 +211,33 @@ const buildMemberProgress = (memberId, callback) => {
                         pillarPoints[p.pillar] = p.pillar_points;
                     });
 
-                    callback(null, 200, {
-                        ...row,
-                        github_points: githubPoints,
-                        attendance_points: attendancePoints,
-                        progress_score: progressScore,
-                        tier: tierName,
-                        next_tier: nextTier,
-                        points_to_next: pointsToNext,
-                        pillar_points: pillarPoints
+                    // Per-activity breakdown (e.g. "Attendance Bonus × 4 = 8 pts")
+                    // so the admin's member dropdown can show the full detail.
+                    PointAdjustment.getMemberActivityBreakdown(memberId, (err, activityRows) => {
+                        if (err) return callback(err);
+                        const activity_breakdown = {};
+                        (activityRows || []).forEach((r) => {
+                            if (!activity_breakdown[r.pillar]) activity_breakdown[r.pillar] = [];
+                            activity_breakdown[r.pillar].push({
+                                activity: r.activity,
+                                total_points: r.total_points,
+                                times_awarded: r.times_awarded
+                            });
+                        });
+
+                        callback(null, 200, {
+                            ...row,
+                            total_points: totalPoints,
+                            github_score: githubScore,
+                            github_points: githubPoints,
+                            attendance_points: attendancePoints,
+                            progress_score: progressScore,
+                            tier: tierName,
+                            next_tier: nextTier,
+                            points_to_next: pointsToNext,
+                            pillar_points: pillarPoints,
+                            activity_breakdown
+                        });
                     });
                 });
             }
@@ -336,8 +384,10 @@ const getAdminDashboard = (req, res) => {
     db.query(`
         SELECT
             COALESCE(SUM(p.points), 0) AS total_points,
-            (SELECT COALESCE(SUM(commit_count + pr_count + issue_count + repo_count + star_count), 0)
-             FROM github_contributions WHERE member_id = m.member_id) AS github_score,
+            (SELECT COALESCE(SUM(commit_count + pr_count + issue_count + repo_count), 0)
+             FROM github_contributions WHERE member_id = m.member_id) AS github_core,
+            (SELECT COALESCE(SUM(star_count), 0)
+             FROM github_contributions WHERE member_id = m.member_id) AS star_count_raw,
             CASE
                 WHEN (SELECT COUNT(*) FROM attendance WHERE member_id = m.member_id) = 0 THEN 0
                 ELSE ROUND(
@@ -350,21 +400,29 @@ const getAdminDashboard = (req, res) => {
         WHERE m.approval_status = 'Approved' AND m.is_active = TRUE AND m.role_id != 1
         GROUP BY m.member_id
     `, (err, r) => {
-        const scores = (r || []).map((row) => (row.total_points || 0) + (row.github_score || 0));
-        const settingKeys = TIERS.map((t) => t.key);
+        const settingKeys = [...TIERS.map((t) => t.key), "github_weight", "attendance_weight"];
         db.query(
             `SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN (${settingKeys.map(() => "?").join(",")})`,
             settingKeys,
             (err, settings) => {
                 const cfg = {};
-                (settings || []).forEach((s) => { cfg[s.setting_key] = parseInt(s.setting_value, 10) || 0; });
+                (settings || []).forEach((s) => { cfg[s.setting_key] = s.setting_value; });
+                const githubWeight = parseFloat(cfg.github_weight) || 1;
+                const attendanceWeight = parseFloat(cfg.attendance_weight) || 0;
+                // Same formula as the leaderboard: points + weighted github
+                // (stars capped) + weighted attendance
+                const scores = (r || []).map((row) =>
+                    toNum(row.total_points)
+                    + Math.round((toNum(row.github_core) + Math.min(toNum(row.star_count_raw), STAR_CAP)) * githubWeight)
+                    + Math.round((toNum(row.attendance_rate) / 100) * attendanceWeight)
+                );
                 stats.tier_distribution = {
-                    Diamond: scores.filter((s) => s >= (cfg.tier_diamond_min || 0)).length,
-                    Gold: scores.filter((s) => s >= (cfg.tier_gold_min || 0) && s < (cfg.tier_diamond_min || 0)).length,
-                    Silver: scores.filter((s) => s >= (cfg.tier_silver_min || 0) && s < (cfg.tier_gold_min || 0)).length,
-                    Bronze: scores.filter((s) => s >= (cfg.tier_bronze_min || 0) && s < (cfg.tier_silver_min || 0)).length,
-                    "Rising Star": scores.filter((s) => s >= (cfg.tier_rising_star_min || 0) && s < (cfg.tier_bronze_min || 0)).length,
-                    Rookie: scores.filter((s) => s < (cfg.tier_rising_star_min || 0)).length,
+                    Diamond: scores.filter((s) => s >= (parseInt(cfg.tier_diamond_min, 10) || 0)).length,
+                    Gold: scores.filter((s) => s >= (parseInt(cfg.tier_gold_min, 10) || 0) && s < (parseInt(cfg.tier_diamond_min, 10) || 0)).length,
+                    Silver: scores.filter((s) => s >= (parseInt(cfg.tier_silver_min, 10) || 0) && s < (parseInt(cfg.tier_gold_min, 10) || 0)).length,
+                    Bronze: scores.filter((s) => s >= (parseInt(cfg.tier_bronze_min, 10) || 0) && s < (parseInt(cfg.tier_silver_min, 10) || 0)).length,
+                    "Rising Star": scores.filter((s) => s >= (parseInt(cfg.tier_rising_star_min, 10) || 0) && s < (parseInt(cfg.tier_bronze_min, 10) || 0)).length,
+                    Rookie: scores.filter((s) => s < (parseInt(cfg.tier_rising_star_min, 10) || 0)).length,
                 };
                 done();
             }

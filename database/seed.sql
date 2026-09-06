@@ -84,7 +84,8 @@ INSERT INTO system_settings (setting_key, setting_value) VALUES
 ('tier_gold_min',        '1500'),
 ('tier_diamond_min',     '3000'),
 ('github_weight',        '1'),
-('attendance_weight',    '10');
+('attendance_weight',    '10'),
+('late_grace_minutes',   '15');
 
 -- -------------------------------------------
 -- Default Admin account

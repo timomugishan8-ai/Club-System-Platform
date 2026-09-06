@@ -8,7 +8,8 @@ const EDITABLE_KEYS = [
     "tier_gold_min",
     "tier_diamond_min",
     "github_weight",
-    "attendance_weight"
+    "attendance_weight",
+    "late_grace_minutes"
 ];
 
 const getSettings = (req, res) => {
